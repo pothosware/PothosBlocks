@@ -1,8 +1,9 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
-Release 0.3.0 (pending)
+Release 0.3.0 (2015-12-16)
 ==========================
 
+- Added debian packaging support for blocks toolkit
 - Optional start and end labels for the vector source
 - Added rewind capability to binary file source
 - Created label to message event block
