@@ -39,13 +39,17 @@ public:
     void work(void)
     {
         auto inPort = this->input(0);
+
+        const size_t available = inPort->elements();
+
         for (const auto &label : inPort->labels())
         {
+            if (label.index >= available) break;
             if (label.id == _labelId)
                 this->output(0)->postMessage(label.data);
         }
 
-        inPort->consume(inPort->elements());
+        inPort->consume(available);
     }
 
 private:
