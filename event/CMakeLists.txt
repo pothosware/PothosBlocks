@@ -20,6 +20,7 @@ POTHOS_MODULE_UTIL(
         LabelToMessage.cpp
         TestSignalsAndSlots.cpp
         Evaluator.cpp
+        MessagePrinter.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
