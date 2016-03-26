@@ -4,7 +4,7 @@
 cmake_minimum_required(VERSION 2.8.9)
 project(PothosBlocks CXX)
 
-find_package(Pothos CONFIG REQUIRED)
+find_package(Pothos "0.4.0" CONFIG REQUIRED)
 
 ########################################################################
 ## Feature registration

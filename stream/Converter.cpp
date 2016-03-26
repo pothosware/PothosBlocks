@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -35,9 +35,7 @@ public:
     Converter(const Pothos::DType &dtype)
     {
         this->setupInput(0);
-
-        //unique domain because we allocate the buffers from convert
-        this->setupOutput(0, dtype, this->uid());
+        this->setupOutput(0, dtype);
     }
 
     void work(void)
@@ -58,8 +56,10 @@ public:
         auto buff = inputPort->buffer();
         if (buff.length != 0)
         {
-            buff = buff.convert(outputPort->dtype());
-            outputPort->postBuffer(buff);
+            const auto &outBuff = outputPort->buffer();
+            size_t numElems = std::min(outBuff.elements(), buff.elements());
+            buff.convert(outBuff, numElems);
+            outputPort->produce(numElems);
         }
     }
 
