@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2015 Josh Blum
+// Copyright (c) 2015-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -18,7 +18,7 @@
  * |keywords test
  *
  * |param dtype[Data Type] The output data type.
- * |widget DTypeChooser(float=1,cfloat=1,int=1,cint=1)
+ * |widget DTypeChooser(float=1,cfloat=1,int=1,cint=1,dim=1)
  * |default "complex_float64"
  * |preview disable
  *
