@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2016-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -55,7 +55,7 @@ public:
         const size_t outBytes = this->workInfo().minOutElements;
 
         const auto &inType = in0->buffer().dtype;
-        const Pothos::DType outType(); //TODO
+        const Pothos::DType outType; //TODO
         const size_t inElems = inBytes/inType.size();
         const size_t outElems = outBytes/outType.size();
     }
