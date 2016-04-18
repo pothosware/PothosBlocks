@@ -23,6 +23,8 @@ POTHOS_MODULE_UTIL(
         Relabeler.cpp
         Gateway.cpp
         TestGateway.cpp
+        Interleaver.cpp
+        Deiterleaver.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
