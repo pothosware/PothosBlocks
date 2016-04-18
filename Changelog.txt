@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.4.0 (pending)
 ==========================
 
+- Added reinterpret for pass-through data type modification
 - Use dimension option for blocks that use the DTypeChooser
 - Switch converter block to use the new buffer convert API
 
