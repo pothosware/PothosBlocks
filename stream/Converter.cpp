@@ -49,6 +49,7 @@ public:
         {
             auto pkt = inputPort->popMessage().convert<Pothos::Packet>();
             pkt.payload = pkt.payload.convert(outputPort->dtype());
+            //labels reference element indexes and should stay the same
             outputPort->postMessage(pkt);
         }
 
@@ -69,8 +70,8 @@ public:
         for (const auto &label : port->labels())
         {
             outputPort->postLabel(label.toAdjusted(
-                port->buffer().dtype.size(),
-                outputPort->dtype().size()));
+                outputPort->dtype().size(), //multiply by the output size to get element offset to output bytes
+                port->buffer().dtype.size())); //divide by the input size to get element offset from input bytes
         }
     }
 };

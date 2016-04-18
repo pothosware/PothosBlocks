@@ -48,7 +48,13 @@ public:
         if (inputPort->hasMessage())
         {
             auto pkt = inputPort->popMessage().convert<Pothos::Packet>();
+            const auto inType = pkt.payload.dtype;
             pkt.payload.dtype = outputPort->dtype();
+            for (auto &label : pkt.labels)
+            {
+                label = label.toAdjusted(inType.size(), //multiply to convert input elements to bytes
+                    outputPort->dtype().size()); //divide to convert bytes to output elements
+            }
             outputPort->postMessage(pkt);
         }
 
@@ -62,16 +68,8 @@ public:
         }
     }
 
-    void propagateLabels(const Pothos::InputPort *port)
-    {
-        auto outputPort = this->output(0);
-        for (const auto &label : port->labels())
-        {
-            outputPort->postLabel(label.toAdjusted(
-                port->buffer().dtype.size(),
-                outputPort->dtype().size()));
-        }
-    }
+    //no propagateLabels, keep the same relative byte offset
+    //void propagateLabels(const Pothos::InputPort *port){}
 };
 
 static Pothos::BlockRegistry registerReinterpret(
