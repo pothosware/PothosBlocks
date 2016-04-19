@@ -48,19 +48,33 @@ public:
 
     void work(void)
     {
+        const auto &info = this->workInfo();
         auto in0 = this->input(0);
         auto out0 = this->output(0);
 
-        const size_t inBytes = this->workInfo().minInElements;
-        const size_t outBytes = this->workInfo().minOutElements;
+        const size_t inBytes = info.minInElements;
+        const size_t outBytes = info.minOutElements;
 
         const auto &inType = in0->buffer().dtype;
-        const Pothos::DType outType; //TODO
+        const size_t outDim = inType.dimension()*this->inputs().size();
+        const auto outType = Pothos::DType::fromDType(inType, outDim);
         const size_t inElems = inBytes/inType.size();
         const size_t outElems = outBytes/outType.size();
-    }
+        const size_t elems = std::min(inElems, outElems);
+        const size_t copySize = inType.size();
+        if (elems == 0) return;
 
-private:
+        size_t outBuffPtr = out0->buffer().as<size_t>();
+        for (size_t i = 0; i < elems; i++)
+        {
+            for (auto inPtr : info.inputPointers)
+            {
+                const size_t inBuffPtr = size_t(inPtr)+(i*copySize);
+                std::memcpy((void *)outBuffPtr, (const void *)inBuffPtr, copySize);
+                outBuffPtr += copySize;
+            }
+        }
+    }
 };
 
 static Pothos::BlockRegistry registerInterleaver(
