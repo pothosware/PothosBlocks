@@ -48,7 +48,14 @@ public:
         if (inputPort->hasMessage())
         {
             auto pkt = inputPort->popMessage().convert<Pothos::Packet>();
+            const auto inType = pkt.payload.dtype;
             pkt.payload.dtype = outputPort->dtype();
+            for (auto &label : pkt.labels)
+            {
+                label = label.toAdjusted(inType.size(), //multiply to convert input elements to bytes
+                    outputPort->dtype().size()); //divide to convert bytes to output elements
+                if (label.width == 0) label.width = 1;
+            }
             outputPort->postMessage(pkt);
         }
 
@@ -67,9 +74,10 @@ public:
         auto outputPort = this->output(0);
         for (const auto &label : port->labels())
         {
-            outputPort->postLabel(label.toAdjusted(
-                port->buffer().dtype.size(),
-                outputPort->dtype().size()));
+            //retain relative byte offset when converting into output elements
+            auto outLabel = label.toAdjusted(1, outputPort->dtype().size());
+            if (outLabel.width == 0) outLabel.width = 1;
+            outputPort->postLabel(outLabel);
         }
     }
 };
