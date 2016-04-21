@@ -24,6 +24,8 @@ POTHOS_MODULE_UTIL(
         Gateway.cpp
         TestGateway.cpp
         Reinterpret.cpp
+        Interleave.cpp
+        Deinterleave.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
