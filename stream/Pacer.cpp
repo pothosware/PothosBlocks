@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -45,6 +45,7 @@ public:
         this->registerCall(this, POTHOS_FCN_TUPLE(Pacer, setRate));
         this->registerCall(this, POTHOS_FCN_TUPLE(Pacer, getRate));
         this->registerCall(this, POTHOS_FCN_TUPLE(Pacer, getActualRate));
+        this->registerProbe("getActualRate", "probeActualRate", "actualRateTriggered");
     }
 
     void setRate(const double rate)
@@ -82,7 +83,7 @@ public:
         const auto expectedTime = std::chrono::nanoseconds((long long)(countDelta*1e9/_rate));
         const auto actualTime = (currentTime - _startTime);
         const auto actualTimeNs = std::chrono::duration_cast<std::chrono::nanoseconds>(actualTime);
-        _actualRate = double(countDelta)/actualTimeNs.count()/1e9;
+        _actualRate = (double(countDelta)*1e9)/actualTimeNs.count();
 
         //sleep to approximate the requested rate (sleep takes ms)
         if (actualTime < expectedTime)

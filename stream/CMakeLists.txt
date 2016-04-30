@@ -24,6 +24,7 @@ POTHOS_MODULE_UTIL(
         Gateway.cpp
         TestGateway.cpp
         Reinterpret.cpp
+        RateMonitor.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
