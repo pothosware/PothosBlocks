@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.4.0 (pending)
 ==========================
 
+- Added evaluator list-expansion for multi-argument events
 - Created text file sink for delimited ascii output to file
 - Added rate monitor stream block for probing input rate
 - Added reinterpret for pass-through data type modification

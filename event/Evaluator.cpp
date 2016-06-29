@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2015 Josh Blum
+// Copyright (c) 2015-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -31,10 +31,16 @@
  * An expression contains combinations of variables, constants, and math functions.
  * Example: log2(foo)/bar
  *
- * <p><b>Multi-argument slots:</b> Upstream blocks may pass multiple arguments to a slot.
+ * <p><b>Multi-argument input:</b> Upstream blocks may pass multiple arguments to a slot.
  * Each argument will be available to the expression suffixed by its argument index.
  * For example, suppose that the slot "setBaz" has two arguments,
  * then the following expression would use both arguments: "baz0 + baz1"</p>
+ *
+ * <p><b>Multi-argument output:</b> Downstream blocks may accept multiple arguments from a signal.
+ * The list-expansion format allows each item from a list to be passed to separate arguments of the "triggered" signal.
+ * That format uses a leading asterisk before a list to indicate expansion (just like Python).
+ * For example: "*[1+foo, 2+bar]" will pass 1+foo to "triggered" argument 0, and 2+bar to "triggered" argument 1.
+ * Whereas "[1+foo, 2+bar]" will just pass a list of length 2 to the first argument of the "triggered" signal.</p>
  *
  * |default "log2(val)"
  * |widget StringEntry()
@@ -101,21 +107,31 @@ public:
         }
 
         //perform the evaluation and emit the result
-        this->callVoid("triggered", this->peformEval());
+        const auto args = this->peformEval();
+        this->opaqueCallMethod("triggered", args.data(), args.size());
         return Pothos::Object();
     }
 
-    //make an instance of the the evaluator in pothos-utils
+    //make an instance of the the evaluator in Pothos::Util
     //register the input arguments as constants
     //then evaluate the user-specified expression
-    Pothos::Object peformEval(void)
+    Pothos::ObjectVector peformEval(void)
     {
         auto evalEnv = _EvalEnvironment.callProxy("make");
         for (const auto &pair : _varValues)
         {
             evalEnv.callVoid("registerConstantObj", pair.first, pair.second);
         }
-        return evalEnv.call<Pothos::Object>("eval", _expr);
+
+        //list expansion mode
+        if (_expr.size() > 2 and _expr.substr(0, 2) == "*[")
+        {
+            const auto result = evalEnv.call<Pothos::Object>("eval", _expr.substr(1));
+            return result.convert<Pothos::ObjectVector>();
+        }
+
+        //regular mode, return 1 argument
+        return Pothos::ObjectVector(1, evalEnv.call<Pothos::Object>("eval", _expr));
     }
 
 private:
