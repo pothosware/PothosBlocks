@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include <Pothos/Proxy.hpp>
+#include <Pothos/Util/EvalEnvironment.hpp>
 #include <Poco/Format.h>
 #include <cctype> //toupper
 #include <string>
@@ -68,10 +68,6 @@ public:
         this->registerSignal("triggered");
         this->registerCall(this, POTHOS_FCN_TUPLE(Evaluator, setExpression));
         this->registerCall(this, POTHOS_FCN_TUPLE(Evaluator, getExpression));
-
-        //create eval environment
-        auto env = Pothos::ProxyEnvironment::make("managed");
-        _EvalEnvironment = env->findProxy("Pothos/Util/EvalEnvironment");
     }
 
     void setExpression(const std::string &expr)
@@ -117,21 +113,21 @@ public:
     //then evaluate the user-specified expression
     Pothos::ObjectVector peformEval(void)
     {
-        auto evalEnv = _EvalEnvironment.callProxy("make");
+        Pothos::Util::EvalEnvironment evalEnv;
         for (const auto &pair : _varValues)
         {
-            evalEnv.callVoid("registerConstantObj", pair.first, pair.second);
+            evalEnv.registerConstantObj(pair.first, pair.second);
         }
 
         //list expansion mode
         if (_expr.size() > 2 and _expr.substr(0, 2) == "*[")
         {
-            const auto result = evalEnv.call<Pothos::Object>("eval", _expr.substr(1));
+            const auto result = evalEnv.eval(_expr.substr(1));
             return result.convert<Pothos::ObjectVector>();
         }
 
         //regular mode, return 1 argument
-        return Pothos::ObjectVector(1, evalEnv.call<Pothos::Object>("eval", _expr));
+        return Pothos::ObjectVector(1, evalEnv.eval(_expr));
     }
 
 private:
@@ -139,7 +135,6 @@ private:
     std::map<std::string, std::string> _slotNameToVarName;
     std::map<std::string, Pothos::Object> _varValues;
     std::set<std::string> _varsReady;
-    Pothos::Proxy _EvalEnvironment;
 };
 
 static Pothos::BlockRegistry registerEvaluator(
