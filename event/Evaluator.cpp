@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
+#include <Pothos/Object/Containers.hpp>
 #include <Pothos/Util/EvalEnvironment.hpp>
 #include <Poco/Format.h>
 #include <cctype> //toupper
@@ -45,8 +46,19 @@
  * |default "log2(val)"
  * |widget StringEntry()
  *
+ * |param globals[Globals] A map of variable names to values.
+ * The globals map allows global variables from the topology
+ * as well as other expressions to enter the evaluation operation.
+ *
+ * For example this mapping lets us use foo, bar, and baz in the expression
+ * to represent several different globals and combinations of expressions:
+ * {"foo": myGlobal, "bar": "test123", "baz": myNum+12345}
+ * |default {}
+ * |preview valid
+ *
  * |factory /blocks/evaluator(vars)
  * |setter setExpression(expr)
+ * |setter setGlobals(globals)
  **********************************************************************/
 class Evaluator : public Pothos::Block
 {
@@ -68,6 +80,7 @@ public:
         this->registerSignal("triggered");
         this->registerCall(this, POTHOS_FCN_TUPLE(Evaluator, setExpression));
         this->registerCall(this, POTHOS_FCN_TUPLE(Evaluator, getExpression));
+        this->registerCall(this, POTHOS_FCN_TUPLE(Evaluator, setGlobals));
     }
 
     void setExpression(const std::string &expr)
@@ -78,6 +91,11 @@ public:
     std::string getExpression(void) const
     {
         return _expr;
+    }
+
+    void setGlobals(const Pothos::ObjectKwargs &globals)
+    {
+        _globals = globals;
     }
 
     //Pothos is cool because you can have advanced overload hooks like this,
@@ -114,6 +132,10 @@ public:
     Pothos::ObjectVector peformEval(void)
     {
         Pothos::Util::EvalEnvironment evalEnv;
+        for (const auto &pair : _globals)
+        {
+            evalEnv.registerConstantObj(pair.first, pair.second);
+        }
         for (const auto &pair : _varValues)
         {
             evalEnv.registerConstantObj(pair.first, pair.second);
@@ -132,8 +154,9 @@ public:
 
 private:
     std::string _expr;
+    Pothos::ObjectKwargs _globals;
     std::map<std::string, std::string> _slotNameToVarName;
-    std::map<std::string, Pothos::Object> _varValues;
+    Pothos::ObjectKwargs _varValues;
     std::set<std::string> _varsReady;
 };
 
