@@ -14,6 +14,7 @@ POTHOS_MODULE_UTIL(
     TARGET EventBlocks
     SOURCES
         PeriodicTrigger.cpp
+        TriggeredSignal.cpp
         TestPeriodicTrigger.cpp
         MessageToSignal.cpp
         SlotToMessage.cpp
