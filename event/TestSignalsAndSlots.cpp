@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -8,12 +8,10 @@
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_signals_and_slots)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto messageToSignal = registry.callProxy("/blocks/message_to_signal", "changeEvent");
-    auto slotToMessage = registry.callProxy("/blocks/slot_to_message", "handleEvent");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto messageToSignal = Pothos::BlockRegistry::make("/blocks/message_to_signal", "changeEvent");
+    auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
 
     //feed some msgs
     feeder.callProxy("feedMessage", "msg0");
@@ -46,11 +44,11 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator)
     auto env = Pothos::ProxyEnvironment::make("managed");
     auto registry = env->findProxy("Pothos/BlockRegistry");
 
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto messageToSignal = registry.callProxy("/blocks/message_to_signal", "changeEvent");
-    auto slotToMessage = registry.callProxy("/blocks/slot_to_message", "handleEvent");
-    auto transform = registry.callProxy("/blocks/evaluator", std::vector<std::string>(1, "val"));
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto messageToSignal = Pothos::BlockRegistry::make("/blocks/message_to_signal", "changeEvent");
+    auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
+    auto transform = Pothos::BlockRegistry::make("/blocks/evaluator", std::vector<std::string>(1, "val"));
     transform.callVoid("setExpression", "2*val");
 
     //feed some msgs
@@ -80,13 +78,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator)
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multiarg)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto slotToMessage = registry.callProxy("/blocks/slot_to_message", "handleEvent");
-    auto transform = registry.callProxy("/blocks/evaluator", std::vector<std::string>(1, "val"));
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
+    auto transform = Pothos::BlockRegistry::make("/blocks/evaluator", std::vector<std::string>(1, "val"));
     transform.callVoid("setExpression", "2*val0 + val1");
 
     //test message with two args - object vector format since we are not using messageToSignal
@@ -116,20 +111,17 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multiarg)
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multislot)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-
-    auto feederX = registry.callProxy("/blocks/feeder_source", "int");
-    auto feederY = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto messageToSignalX = registry.callProxy("/blocks/message_to_signal", "changeEvent");
-    auto messageToSignalY = registry.callProxy("/blocks/message_to_signal", "changeEvent");
-    auto slotToMessage = registry.callProxy("/blocks/slot_to_message", "handleEvent");
+    auto feederX = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto feederY = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto messageToSignalX = Pothos::BlockRegistry::make("/blocks/message_to_signal", "changeEvent");
+    auto messageToSignalY = Pothos::BlockRegistry::make("/blocks/message_to_signal", "changeEvent");
+    auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
 
     std::vector<std::string> varNames;
     varNames.push_back("valX");
     varNames.push_back("valY");
-    auto transform = registry.callProxy("/blocks/evaluator", varNames);
+    auto transform = Pothos::BlockRegistry::make("/blocks/evaluator", varNames);
     transform.callVoid("setExpression", "valX - 2*valY");
 
     //feed some msgs

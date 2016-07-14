@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2014 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -10,11 +10,9 @@
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_gateway)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto gateway = registry.callProxy("/blocks/gateway");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto gateway = Pothos::BlockRegistry::make("/blocks/gateway");
 
     //create a test plan
     Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());

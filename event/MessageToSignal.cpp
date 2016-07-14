@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2014 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -40,7 +40,7 @@ public:
         auto input = this->input(0);
         if (input->hasMessage())
         {
-            this->callVoid(_emitName, input->popMessage());
+            this->emitSignal(_emitName, input->popMessage());
         }
     }
 

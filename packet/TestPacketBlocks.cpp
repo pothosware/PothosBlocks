@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -11,14 +11,12 @@ static void test_packet_blocks_with_mtu(const size_t mtu)
 {
     std::cout << "testing MTU " << mtu << std::endl;
 
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
-    auto s2p = registry.callProxy("/blocks/stream_to_packet");
+    auto s2p = Pothos::BlockRegistry::make("/blocks/stream_to_packet");
     s2p.callVoid("setMTU", mtu);
-    auto p2s = registry.callProxy("/blocks/packet_to_stream");
+    auto p2s = Pothos::BlockRegistry::make("/blocks/packet_to_stream");
 
     //create a test plan
     Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());
@@ -49,13 +47,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_packet_blocks)
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_packet_to_stream)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-
     //create the blocks
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto p2s = registry.callProxy("/blocks/packet_to_stream");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto p2s = Pothos::BlockRegistry::make("/blocks/packet_to_stream");
     p2s.callVoid("setFrameStartId", "SOF0");
     p2s.callVoid("setFrameEndId", "EOF0");
 
@@ -89,13 +84,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_packet_to_stream)
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_stream_to_packet)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-
     //create the blocks
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
-    auto s2p = registry.callProxy("/blocks/stream_to_packet");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
+    auto s2p = Pothos::BlockRegistry::make("/blocks/stream_to_packet");
     s2p.callVoid("setFrameStartId", "SOF0");
     s2p.callVoid("setFrameEndId", "EOF0");
 

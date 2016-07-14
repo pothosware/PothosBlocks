@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -10,20 +10,17 @@
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     auto tempFile = Poco::TemporaryFile();
     std::cout << "tempFile " << tempFile.path() << std::endl;
     POTHOS_TEST_TRUE(tempFile.createFile());
 
-    auto fileSource = registry.callProxy("/blocks/binary_file_source", "int");
+    auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
     fileSource.callVoid("setFilePath", tempFile.path());
 
-    auto fileSink = registry.callProxy("/blocks/binary_file_sink");
+    auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
     fileSink.callVoid("setFilePath", tempFile.path());
 
     //create a test plan

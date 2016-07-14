@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -13,19 +13,18 @@ static void network_test_harness(const std::string &scheme, const bool serverIsS
 {
     std::cout << Poco::format("network_test_harness: %s:// (serverIsSource? %s)",
         scheme, std::string(serverIsSource?"true":"false")) << std::endl;
-    auto env = Pothos::ProxyEnvironment::make("managed")->findProxy("Pothos/BlockRegistry");
 
     //create server
     auto server_uri = Poco::format("%s://%s", scheme, Pothos::Util::getWildcardAddr());
     std::cout << "make server " << server_uri << std::endl;
-    auto server = env.callProxy(
+    auto server = Pothos::BlockRegistry::make(
         (serverIsSource)?"/blocks/network_source":"/blocks/network_sink",
         server_uri, "BIND");
 
     //create client
     auto client_uri = Poco::format("%s://%s", scheme, Pothos::Util::getLoopbackAddr(server.call<std::string>("getActualPort")));
     std::cout << "make client " << client_uri << std::endl;
-    auto client = env.callProxy(
+    auto client = Pothos::BlockRegistry::make(
         (serverIsSource)?"/blocks/network_sink":"/blocks/network_source",
         client_uri, "CONNECT");
 
@@ -34,8 +33,8 @@ static void network_test_harness(const std::string &scheme, const bool serverIsS
     auto sink = (serverIsSource)? client : server;
 
     //tester blocks
-    auto feeder = env.callProxy("/blocks/feeder_source", "int");
-    auto collector = env.callProxy("/blocks/collector_sink", "int");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     //create tester topology -- tests for open close
     std::cout << "Open/close repeat test" << std::endl;

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2014 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -9,13 +9,11 @@
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_serializer_blocks)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
-    auto serializer = registry.callProxy("/blocks/serializer");
-    auto deserializer = registry.callProxy("/blocks/deserializer");
+    auto serializer = Pothos::BlockRegistry::make("/blocks/serializer");
+    auto deserializer = Pothos::BlockRegistry::make("/blocks/deserializer");
 
     //create a test plan
     Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());

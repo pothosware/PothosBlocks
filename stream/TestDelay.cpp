@@ -10,11 +10,9 @@
 
 static void delayBlockTestCase(const int delayVal)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto delay = registry.callProxy("/blocks/delay");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
+    auto delay = Pothos::BlockRegistry::make("/blocks/delay");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     //setup
     std::cout << "delayBlockTestCase " << delayVal << std::endl;

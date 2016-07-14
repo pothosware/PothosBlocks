@@ -10,11 +10,9 @@
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_periodic_trigger)
 {
-    auto env = Pothos::ProxyEnvironment::make("managed");
-    auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto trigger = registry.callProxy("/blocks/periodic_trigger");
+    auto trigger = Pothos::BlockRegistry::make("/blocks/periodic_trigger");
     trigger.callVoid("setRate", 4.0);
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     //run the topology
     {
