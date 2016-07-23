@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.4.0 (pending)
 ==========================
 
+- Added message generator block for generating test content
 - Added triggered signal to emit args based on conditions
 - Added evaluator list-expansion for multi-argument events
 - Created text file sink for delimited ascii output to file
