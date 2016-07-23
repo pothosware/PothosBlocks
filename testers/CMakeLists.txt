@@ -25,6 +25,7 @@ POTHOS_MODULE_UTIL(
         SporadicDropper.cpp
         SporadicLabeler.cpp
         VectorSource.cpp
+        MessageGenerator.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
