@@ -12,7 +12,15 @@ Homepage: https://github.com/pothosware/pothos-blocks/wiki
 Vcs-Git: https://github.com/pothosware/pothos-blocks.git
 Vcs-Browser: https://github.com/pothosware/pothos-blocks
 
-Package: pothos-blocks
+Package: pothos-modules-blocks
+Section: libs
+Architecture: all
+Pre-Depends: ${misc:Pre-Depends}
+Depends: pothos-modules0.4-3-blocks, ${misc:Depends}
+Description: core processing blocks - metapackage
+ The Pothos data-flow software suite.
+
+Package: pothos-modules0.4-3-blocks
 Section: libs
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends}
