@@ -23,13 +23,29 @@
  * in the "STREAM" output mode. And produces packets of the specified
  * data type in the "PACKET" output mode.
  *
+ * <h2>Bind vs Connect</h2>
+ *
+ * The socket can be used in two basic operation modes: bind or connect.
+ *
+ * In the bind mode, the socket is bound to a network address like:
+ * 0.0.0.0, localhost, or the address of a configured ethernet device.
+ * The socket is capable of receiving UDP packets from another socket,
+ * but it cannot send any packets until it has received at least one packet.
+ * Because the last received packet provides the destination for sending.
+ *
+ * In connected mode, the socket is connected to a network address
+ * where a bound server socket is running. Example addresss: localhost,
+ * a resolvable hostname, or IP address of a specific machine.
+ * The connected socket can both send UDP packets to the server
+ * or receive UDP packets from the server and only from the server.
+ *
  * |category /Network
  * |keywords udp datagram packet network
  *
  * |param dtype[Data Type] The output data type.
  * Sets the data type of the output port and also of the buffer in packet mode.
  * |widget DTypeChooser(float=1,cfloat=1,int=1,cint=1,uint=1,cuint=1,dim=1)
- * |default "complex_float64"
+ * |default "complex_float32"
  * |preview disable
  *
  * |param uri[URI] The bind or connection uri string.
@@ -54,10 +70,25 @@
  * |default 1472
  * |units bytes
  *
+ * |param recvBuffSize[Receive Buffer] The size of the receive buffer.
+ * Set the size of the receive socket buffer (0 for default).
+ * |units bytes
+ * |tab Advanced
+ * |preview valid
+ * |default 0
+ *
+ * |param sendBuffSize[Send Buffer] The size of the send buffer.
+ * Set the size of the send socket buffer (0 for default).
+ * |units bytes
+ * |tab Advanced
+ * |preview valid
+ * |default 0
+ *
  * |factory /blocks/datagram_io(dtype)
  * |initializer setupSocket(uri, opt)
  * |setter setMode(mode)
  * |setter setMTU(mtu)
+ * |setter setBufferSize(recvBuffSize, sendBuffSize)
  **********************************************************************/
 class DatagramIO : public Pothos::Block
 {
@@ -77,6 +108,7 @@ public:
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setupSocket));
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setMode));
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setMTU));
+        this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setBufferSize));
     }
 
     ~DatagramIO(void)
@@ -117,6 +149,34 @@ public:
 
         outPort->setReserve(_mtu/elemSize);
         _mtu = mtu;
+    }
+
+    void setBufferSize(const size_t recvSize, const size_t sendSize)
+    {
+        if (recvSize != 0)
+        {
+            _sock.setReceiveBufferSize(recvSize);
+            const int actualSize = _sock.getReceiveBufferSize();
+            if (actualSize < int(recvSize))
+            {
+                poco_warning_f2(_logger,
+                    "Attempted to set the socket receive buffer to %d bytes.\n"
+                    "The actual size was %d bytes. System limits may require reconfiguration.",
+                    int(recvSize), actualSize);
+            }
+        }
+        if (sendSize != 0)
+        {
+            _sock.setSendBufferSize(sendSize);
+            const int actualSize = _sock.getSendBufferSize();
+            if (actualSize < int(sendSize))
+            {
+                poco_warning_f2(_logger,
+                    "Attempted to set the socket send buffer to %d bytes.\n"
+                    "The actual size was %d bytes. System limits may require reconfiguration.",
+                    int(sendSize), actualSize);
+            }
+        }
     }
 
     void work(void)
