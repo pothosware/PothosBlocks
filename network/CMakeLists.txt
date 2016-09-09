@@ -28,6 +28,7 @@ POTHOS_MODULE_UTIL(
         SocketEndpoint.cpp
         TestNetworkBlocks.cpp
         TestNetworkTopology.cpp
+        DatagramIO.cpp
     DESTINATION blocks
     LIBRARIES ${MODULE_LIBRARIES}
     ENABLE_DOCS
