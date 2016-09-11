@@ -40,8 +40,15 @@
  * |default ""
  * |widget FileEntry(mode=save)
  *
+ * |param enabled[Saving Enabled] Saving will not occur if disabled.
+ * |option true
+ * |option false
+ * |default true
+ * |widget ComboBox()
+ *
  * |factory /blocks/binary_file_sink()
  * |setter setFilePath(path)
+ * |setter setEnabled(enabled)
  **********************************************************************/
 class BinaryFileSink : public Pothos::Block
 {
@@ -52,10 +59,12 @@ public:
     }
 
     BinaryFileSink(void):
-        _fd(-1)
+        _fd(-1),
+        _enabled(true)
     {
         this->setupInput(0);
         this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSink, setFilePath));
+        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSink, setEnabled));
     }
 
     void setFilePath(const std::string &path)
@@ -67,6 +76,11 @@ public:
             this->deactivate();
             this->activate();
         }
+    }
+
+    void setEnabled(const bool enabled)
+    {
+        _enabled = enabled;
     }
 
     void activate(void)
@@ -89,18 +103,23 @@ public:
     {
         auto in0 = this->input(0);
         if (in0->elements() == 0) return;
-        auto ptr = in0->buffer().as<const void *>();
-        auto r = write(_fd, ptr, in0->elements());
-        if (r >= 0) in0->consume(size_t(r));
+        if (!_enabled) in0->consume(in0->elements());
         else
         {
-            poco_error_f3(Poco::Logger::get("BinaryFileSink"), "write() returned %d -- %s(%d)", int(r), std::string(strerror(errno)), errno);
+            auto ptr = in0->buffer().as<const void *>();
+            auto r = write(_fd, ptr, in0->elements());
+            if (r >= 0) in0->consume(size_t(r));
+            else
+            {
+                poco_error_f3(Poco::Logger::get("BinaryFileSink"), "write() returned %d -- %s(%d)", int(r), std::string(strerror(errno)), errno);
+            }
         }
     }
 
 private:
     int _fd;
     std::string _path;
+    bool _enabled;
 };
 
 static Pothos::BlockRegistry registerBinaryFileSink(
