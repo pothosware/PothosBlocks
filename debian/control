@@ -7,7 +7,7 @@ Build-Depends:
     cmake (>= 2.8.9),
     libpoco-dev (>= 1.6),
     libpothos-dev
-Standards-Version: 3.9.6
+Standards-Version: 3.9.8
 Homepage: https://github.com/pothosware/pothos-blocks/wiki
 Vcs-Git: https://github.com/pothosware/pothos-blocks.git
 Vcs-Browser: https://github.com/pothosware/pothos-blocks
