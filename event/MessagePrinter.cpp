@@ -1,8 +1,9 @@
-// Copyright (c) 2016-2016 Josh Blum
+// Copyright (c) 2016-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
 #include <Poco/Logger.h>
+#include <Poco/Format.h>
 #include <iostream>
 
 /***********************************************************************
@@ -80,8 +81,28 @@ public:
     void work(void)
     {
         auto input = this->input(0);
-        if (not input->hasMessage()) return;
-        auto msg = input->popMessage().toString();
+
+        std::string msg;
+
+        //got an input buffer, print type and size
+        if (input->elements() != 0)
+        {
+            const auto &buff = input->buffer();
+            input->consume(input->elements());
+            msg = Poco::format("%s[%d]", buff.dtype.toString(), int(buff.elements()));
+        }
+
+        //got an input message, convert to string
+        else if (input->hasMessage())
+        {
+            msg = input->popMessage().toString();
+        }
+
+        //got nothing, just return
+        else
+        {
+            return;
+        }
 
         if      (_dest == "STDOUT")      std::cout << (_srcName.empty()?"":(_srcName+": ")) << msg << std::endl;
         else if (_dest == "STDERR")      std::cerr << (_srcName.empty()?"":(_srcName+": ")) << msg << std::endl;

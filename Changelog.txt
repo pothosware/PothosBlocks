@@ -1,5 +1,10 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
+Release 0.4.2 (pending)
+==========================
+
+- Handle printing stream buffers in the message printer block
+
 Release 0.4.1 (2016-09-25)
 ==========================
 
