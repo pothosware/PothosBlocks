@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016 Josh Blum
+// Copyright (c) 2015-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -86,6 +86,16 @@ public:
     void setExpression(const std::string &expr)
     {
         _expr = expr;
+
+        //check that all slots specified are ready
+        for (const auto &pair : _slotNameToVarName)
+        {
+            if (_varsReady.count(pair.second) == 0) return;
+        }
+
+        //perform the evaluation and emit the result
+        const auto args = this->peformEval();
+        this->opaqueCallMethod("triggered", args.data(), args.size());
     }
 
     std::string getExpression(void) const
