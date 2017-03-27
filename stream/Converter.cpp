@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -43,7 +43,6 @@ public:
     {
         auto inputPort = this->input(0);
         auto outputPort = this->output(0);
-        inputPort->consume(inputPort->elements());
 
         //got a packet message
         if (inputPort->hasMessage())
@@ -62,6 +61,9 @@ public:
             size_t numElems = std::min(outBuff.elements(), buff.elements());
             buff.convert(outBuff, numElems);
             outputPort->produce(numElems);
+
+            //input type unspecified, convert back to bytes to consume
+            inputPort->consume(numElems*buff.dtype.size());
         }
     }
 
