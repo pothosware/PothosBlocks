@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.4.3 (pending)
 ==========================
 
+- Added yield() to DatagramIO block for polling recv()
 - Fixed consume() amount for stream type converter block
 
 Release 0.4.2 (2017-01-26)

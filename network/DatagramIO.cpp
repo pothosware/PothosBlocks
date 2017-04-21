@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2016 Josh Blum
+// Copyright (c) 2016-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -265,6 +265,8 @@ public:
                 poco_error_f2(_logger, "Socket recv %d bytes failed: %s", int(outBuff.length), ex.displayText());
             }
         }
+
+        return this->yield(); //always yield to service recv() again
     }
 
 private:
