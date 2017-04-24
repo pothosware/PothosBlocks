@@ -1,6 +1,6 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
-Release 0.4.3 (pending)
+Release 0.4.3 (2017-04-23)
 ==========================
 
 - Added yield() to DatagramIO block for polling recv()
