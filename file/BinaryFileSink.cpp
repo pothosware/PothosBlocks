@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -40,11 +40,10 @@
  * |default ""
  * |widget FileEntry(mode=save)
  *
- * |param enabled[Saving Enabled] Saving will not occur if disabled.
- * |option true
- * |option false
+ * |param enabled[File Write] Saving will not occur if disabled.
+ * |option [Enabled] true
+ * |option [Disabled] false
  * |default true
- * |widget ComboBox()
  *
  * |factory /blocks/binary_file_sink()
  * |setter setFilePath(path)

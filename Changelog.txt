@@ -1,5 +1,10 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
+Release 0.4.4 (pending)
+==========================
+
+- Tweaks to block description for file sink enabled option
+
 Release 0.4.3 (2017-04-23)
 ==========================
 
