@@ -1,15 +1,15 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include <Poco/JSON/Array.h>
-#include <Poco/JSON/Object.h>
-#include <Poco/Types.h>
 #include <random>
 #include <chrono>
 #include <thread>
 #include <queue>
 #include <algorithm>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 class FeederSource : Pothos::Block
 {
@@ -29,7 +29,7 @@ public:
         return new FeederSource(dtype);
     }
 
-    Poco::JSON::Object::Ptr feedTestPlan(const Poco::JSON::Object::Ptr &testPlan);
+    std::string feedTestPlan(const std::string &testPlan);
 
     void feedBuffer(const Pothos::BufferChunk &buffer)
     {
@@ -121,14 +121,16 @@ std::string random_string(size_t length)
     return s;
 }
 
-Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr &testPlan)
+std::string FeederSource::feedTestPlan(const std::string &testPlanStr)
 {
+    const auto testPlan = json::parse(testPlanStr);
+
     //test plan data
-    Poco::JSON::Object::Ptr expectedResult(new Poco::JSON::Object());
-    Poco::JSON::Array::Ptr expectedValues(new Poco::JSON::Array());
-    Poco::JSON::Array::Ptr expectedLabels(new Poco::JSON::Array());
-    Poco::JSON::Array::Ptr expectedMessages(new Poco::JSON::Array());
-    Poco::JSON::Array::Ptr expectedPackets(new Poco::JSON::Array());
+    json expectedResult(json::object());
+    json expectedValues(json::array());
+    json expectedLabels(json::array());
+    json expectedMessages(json::array());
+    json expectedPackets(json::array());
 
     //results to feed into the block
     std::vector<Pothos::BufferChunk> buffers;
@@ -141,14 +143,14 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
     std::mt19937 gen(rd());
 
     //defaults
-    const auto enableBuffers = testPlan->optValue<bool>("enableBuffers", false);
-    const auto enableLabels = testPlan->optValue<bool>("enableLabels", false);
-    const auto enableMessages = testPlan->optValue<bool>("enableMessages", false);
-    const auto enablePackets = testPlan->optValue<bool>("enablePackets", false);
-    const auto minTrials = testPlan->optValue<int>("minTrials", 10);
-    const auto maxTrials = testPlan->optValue<int>("maxTrials", 100);
-    const auto minSize = testPlan->optValue<int>("minSize", 10);
-    const auto maxSize = testPlan->optValue<int>("maxSize", 100);
+    const bool enableBuffers = testPlan.value("enableBuffers", false);
+    const bool enableLabels = testPlan.value("enableLabels", false);
+    const bool enableMessages = testPlan.value("enableMessages", false);
+    const bool enablePackets = testPlan.value("enablePackets", false);
+    const int minTrials = testPlan.value("minTrials", 10);
+    const int maxTrials = testPlan.value("maxTrials", 100);
+    const int minSize = testPlan.value("minSize", 10);
+    const int maxSize = testPlan.value("maxSize", 100);
 
     /*******************************************************************
      * Random buffer generation:
@@ -161,20 +163,20 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
         //create random distributions
         const auto elemDType = this->output(0)->dtype();
         std::uniform_int_distribution<int> bufferDist(
-            testPlan->optValue<int>("minBuffers", minTrials),
-            testPlan->optValue<int>("maxBuffers", maxTrials));
+            testPlan.value("minBuffers", minTrials),
+            testPlan.value("maxBuffers", maxTrials));
         std::uniform_int_distribution<int> elementsDist(
-            testPlan->optValue<int>("minBufferSize", minSize)/elemDType.size(),
-            testPlan->optValue<int>("maxBufferSize", maxSize)/elemDType.size());
+            testPlan.value("minBufferSize", minSize)/elemDType.size(),
+            testPlan.value("maxBufferSize", maxSize)/elemDType.size());
         const int valueSize = (1 << elemDType.size()*8);
         const int signedOff = elemDType.isSigned()?valueSize/2:0;
         std::uniform_int_distribution<int> valueDist(
-            testPlan->optValue<int>("minValue", -signedOff),
-            testPlan->optValue<int>("maxValue", valueSize-signedOff-1));
+            testPlan.value("minValue", -signedOff),
+            testPlan.value("maxValue", valueSize-signedOff-1));
 
         //constraints on random numbers of elements produced
-        const int totalMultiple = testPlan->optValue<int>("totalMultiple", 1);
-        const int bufferMultiple = testPlan->optValue<int>("bufferMultiple", 1);
+        const int totalMultiple = testPlan.value("totalMultiple", 1);
+        const int bufferMultiple = testPlan.value("bufferMultiple", 1);
 
         //generate the buffers and elements
         const size_t numBuffs = bufferDist(gen);
@@ -200,7 +202,7 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
             for (int i = 0; i < numElems; i++)
             {
                 auto value = valueDist(gen);
-                expectedValues->add(value);
+                expectedValues.push_back(value);
                 if (elemDType.size() == 1) buff.as<char *>()[i] = char(value);
                 else if (elemDType.size() == 2) buff.as<short *>()[i] = short(value);
                 else if (elemDType.size() == 4) buff.as<int *>()[i] = int(value);
@@ -210,10 +212,10 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
             //store the resulting test plan
             if (enablePackets)
             {
-                Poco::JSON::Object::Ptr expectedPacket(new Poco::JSON::Object());
-                expectedPackets->add(expectedPacket);
-                expectedPacket->set("expectedValues", expectedValues);
-                expectedValues = new Poco::JSON::Array(); //clear for next packet
+                json expectedPacket(json::object());
+                expectedPacket["expectedValues"] = expectedValues;
+                expectedValues = json::array(); //clear for next packet
+                expectedPackets.push_back(expectedPacket);
 
                 Pothos::Packet packet;
                 packet.payload = buff;
@@ -232,11 +234,11 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
     {
         //create random distributions
         std::uniform_int_distribution<int> labelDist(
-            testPlan->optValue<int>("minLabels", minTrials),
-            testPlan->optValue<int>("maxLabels", maxTrials));
+            testPlan.value("minLabels", minTrials),
+            testPlan.value("maxLabels", maxTrials));
         std::uniform_int_distribution<int> dataSizeDist(
-            testPlan->optValue<int>("minLabelSize", minSize),
-            testPlan->optValue<int>("maxLabelSize", maxSize));
+            testPlan.value("minLabelSize", minSize),
+            testPlan.value("maxLabelSize", maxSize));
         std::uniform_int_distribution<unsigned long long> indexDist(0, totalElements-1);
 
         //generate random label indexes and sort them
@@ -271,18 +273,16 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
             }
 
             //create label descriptor
-            Poco::JSON::Object::Ptr expectedLabel(new Poco::JSON::Object());
-            expectedLabel->set("index", Poco::UInt64(lbl.index));
-            expectedLabel->set("data", data);
-            expectedLabel->set("id", lbl.id);
+            json expectedLabel(json::object());
+            expectedLabel["index"] = lbl.index;
+            expectedLabel["data"] = data;
+            expectedLabel["id"] = lbl.id;
 
             //store the resulting test plan
             if (enablePackets)
             {
-                auto expectedPacket = expectedPackets->getObject(packetIndex);
-                if (not expectedPacket->has("expectedLabels")) expectedPacket->set(
-                    "expectedLabels", Poco::JSON::Array::Ptr(new Poco::JSON::Array()));
-                expectedPacket->getArray("expectedLabels")->add(expectedLabel);
+                auto &expectedPacket = expectedPackets[packetIndex];
+                expectedPacket["expectedLabels"].push_back(expectedLabel);
                 packets.at(packetIndex).labels.push_back(lbl);
             }
             else
@@ -290,7 +290,7 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
                 //in buffer mode, adjust for absolute start
                 lbl.index += this->output(0)->totalElements();
                 labels.push_back(lbl);
-                expectedLabels->add(expectedLabel);
+                expectedLabels.push_back(expectedLabel);
             }
         }
     }
@@ -303,26 +303,26 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
     {
         //create random distributions
         std::uniform_int_distribution<int> messageDist(
-            testPlan->optValue<int>("minMessages", minTrials),
-            testPlan->optValue<int>("maxMessages", maxTrials));
+            testPlan.value("minMessages", minTrials),
+            testPlan.value("maxMessages", maxTrials));
         std::uniform_int_distribution<int> dataSizeDist(
-            testPlan->optValue<int>("minMessageSize", minSize),
-            testPlan->optValue<int>("maxMessageSize", maxSize));
+            testPlan.value("minMessageSize", minSize),
+            testPlan.value("maxMessageSize", maxSize));
 
         const size_t numMessages = messageDist(gen);
         for (size_t msgno = 0; msgno < numMessages; msgno++)
         {
             auto data = random_string(dataSizeDist(gen));
             messages.emplace_back(data);
-            expectedMessages->add(data);
+            expectedMessages.push_back(data);
         }
     }
 
     //load the test plan data when used
-    if (expectedValues->size() != 0) expectedResult->set("expectedValues", expectedValues);
-    if (expectedLabels->size() != 0) expectedResult->set("expectedLabels", expectedLabels);
-    if (expectedMessages->size() != 0) expectedResult->set("expectedMessages", expectedMessages);
-    if (expectedPackets->size() != 0) expectedResult->set("expectedPackets", expectedPackets);
+    if (not expectedValues.empty()) expectedResult["expectedValues"] = expectedValues;
+    if (not expectedLabels.empty()) expectedResult["expectedLabels"] = expectedLabels;
+    if (not expectedMessages.empty()) expectedResult["expectedMessages"] = expectedMessages;
+    if (not expectedPackets.empty()) expectedResult["expectedPackets"] = expectedPackets;
 
     //feed the generated data
     for (const auto &lbl : labels) this->feedLabel(lbl);
@@ -330,5 +330,5 @@ Poco::JSON::Object::Ptr FeederSource::feedTestPlan(const Poco::JSON::Object::Ptr
     for (const auto &msg : messages) this->feedMessage(msg);
     for (const auto &pkt : packets) this->feedPacket(pkt);
 
-    return expectedResult;
+    return expectedResult.dump();
 }

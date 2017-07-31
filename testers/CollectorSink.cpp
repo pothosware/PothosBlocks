@@ -1,14 +1,15 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
-#include <Poco/JSON/Array.h>
-#include <Poco/JSON/Object.h>
 #include <Poco/Format.h>
 #include <Poco/Types.h>
 #include <cstring> //memcpy
 #include <vector>
 #include <algorithm> //min/max
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 class CollectorSink : Pothos::Block
 {
@@ -49,11 +50,11 @@ public:
         return _packets;
     }
 
-    void verifyTestPlan(const Poco::JSON::Object::Ptr &expected);
-    static void verifyTestPlanExpectedValues(const Poco::JSON::Object::Ptr &expected, const Pothos::BufferChunk &buffer, const Pothos::DType &expectedDType);
-    static void verifyTestPlanExpectedLabels(const Poco::JSON::Object::Ptr &expected, const std::vector<Pothos::Label> &labels);
-    static void verifyTestPlanExpectedMessages(const Poco::JSON::Object::Ptr &expected, const std::vector<Pothos::Object> &messages);
-    static void verifyTestPlanExpectedPackets(const Poco::JSON::Object::Ptr &expected, const std::vector<Pothos::Packet> &packets, const Pothos::DType &expectedDType);
+    void verifyTestPlan(const std::string &expected);
+    static void verifyTestPlanExpectedValues(const json &expected, const Pothos::BufferChunk &buffer, const Pothos::DType &expectedDType);
+    static void verifyTestPlanExpectedLabels(const json &expected, const std::vector<Pothos::Label> &labels);
+    static void verifyTestPlanExpectedMessages(const json &expected, const std::vector<Pothos::Object> &messages);
+    static void verifyTestPlanExpectedPackets(const json &expected, const std::vector<Pothos::Packet> &packets, const Pothos::DType &expectedDType);
 
     void work(void)
     {
@@ -113,29 +114,30 @@ static Pothos::BlockRegistry registerCollectorSink(
 /***********************************************************************
  * Verify test plan -- top level call
  **********************************************************************/
-void CollectorSink::verifyTestPlan(const Poco::JSON::Object::Ptr &expected)
+void CollectorSink::verifyTestPlan(const std::string &expectedStr)
 {
+    const auto expected = json::parse(expectedStr);
     bool checked = false;
 
-    if (expected->has("expectedValues"))
+    if (expected.count("expectedValues"))
     {
         verifyTestPlanExpectedValues(expected, _buffer, this->input(0)->dtype());
         checked = true;
     }
 
-    if (expected->has("expectedLabels"))
+    if (expected.count("expectedLabels"))
     {
         verifyTestPlanExpectedLabels(expected, _labels);
         checked = true;
     }
 
-    if (expected->has("expectedMessages"))
+    if (expected.count("expectedMessages"))
     {
         verifyTestPlanExpectedMessages(expected, _messages);
         checked = true;
     }
 
-    if (expected->has("expectedPackets"))
+    if (expected.count("expectedPackets"))
     {
         verifyTestPlanExpectedPackets(expected, _packets, this->input(0)->dtype());
         checked = true;
@@ -150,42 +152,42 @@ void CollectorSink::verifyTestPlan(const Poco::JSON::Object::Ptr &expected)
 /***********************************************************************
  * Verify test plan helper -- check buffer
  **********************************************************************/
-void CollectorSink::verifyTestPlanExpectedValues(const Poco::JSON::Object::Ptr &expected, const Pothos::BufferChunk &buffer, const Pothos::DType &expectedDType)
+void CollectorSink::verifyTestPlanExpectedValues(const json &expected, const Pothos::BufferChunk &buffer, const Pothos::DType &expectedDType)
 {
     if (buffer.length == 0) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()", "buffer is empty");
 
     if (not (buffer.dtype == expectedDType)) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
         Poco::format("Buffer type mismatch: expected %s -> actual %s", expectedDType.toString(), buffer.dtype.toString()));
 
-    auto expectedValues = expected->getArray("expectedValues");
+    const auto expectedValues = expected.value("expectedValues", json::array());
     auto intBuffer = buffer.convert(typeid(int));
     auto numActualElems = intBuffer.elements();
 
-    for (size_t i = 0; i < std::min(numActualElems, expectedValues->size()); i++)
+    for (size_t i = 0; i < std::min(numActualElems, expectedValues.size()); i++)
     {
-        const auto value = expectedValues->getElement<int>(i);
+        const int value = expectedValues[i];
         const auto actual = intBuffer.as<const int *>()[i];
         if (value != actual) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
             Poco::format("Value check for element %z: expected %d -> actual %d", i, value, actual));
     }
 
-    if (numActualElems != expectedValues->size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
-        Poco::format("Check expected %z elements, actual %z elements", expectedValues->size(), numActualElems));
+    if (numActualElems != expectedValues.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+        Poco::format("Check expected %z elements, actual %z elements", expectedValues.size(), numActualElems));
 }
 
 /***********************************************************************
  * Verify test plan helper -- check labels
  **********************************************************************/
-void CollectorSink::verifyTestPlanExpectedLabels(const Poco::JSON::Object::Ptr &expected, const std::vector<Pothos::Label> &labels)
+void CollectorSink::verifyTestPlanExpectedLabels(const json &expected, const std::vector<Pothos::Label> &labels)
 {
-    auto expectedLabels = expected->getArray("expectedLabels");
-    for (size_t i = 0; i < std::min(labels.size(), expectedLabels->size()); i++)
+    const auto expectedLabels = expected.value("expectedLabels", json::array());
+    for (size_t i = 0; i < std::min(labels.size(), expectedLabels.size()); i++)
     {
-        auto lbl = labels[i];
-        auto expectedLabel = expectedLabels->getObject(i);
-        auto value = expectedLabel->getValue<std::string>("data");
-        auto index = expectedLabel->getValue<Poco::UInt64>("index");
-        auto id = expectedLabel->getValue<std::string>("id");
+        const auto &lbl = labels[i];
+        const auto &expectedLabel = expectedLabels[i];
+        const std::string value = expectedLabel["data"];
+        const size_t index = expectedLabel["index"];
+        const std::string id = expectedLabel["id"];
         if (lbl.data.type() != typeid(std::string)) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
             "cant handle this label type: " + lbl.data.getTypeString());
         auto actual = lbl.data.extract<std::string>();
@@ -199,20 +201,20 @@ void CollectorSink::verifyTestPlanExpectedLabels(const Poco::JSON::Object::Ptr &
             Poco::format("Value check for label data %z: expected '%s' -> actual '%s'", i, value, actual));
     }
 
-    if (labels.size() != expectedLabels->size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
-        Poco::format("Check expected %z labels, actual %z labels", expectedLabels->size(), labels.size()));
+    if (labels.size() != expectedLabels.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+        Poco::format("Check expected %z labels, actual %z labels", expectedLabels.size(), labels.size()));
 }
 
 /***********************************************************************
  * Verify test plan helper -- check messages
  **********************************************************************/
-void CollectorSink::verifyTestPlanExpectedMessages(const Poco::JSON::Object::Ptr &expected, const std::vector<Pothos::Object> &messages)
+void CollectorSink::verifyTestPlanExpectedMessages(const json &expected, const std::vector<Pothos::Object> &messages)
 {
-    auto expectedMessages = expected->getArray("expectedMessages");
-    for (size_t i = 0; i < std::min(messages.size(), expectedMessages->size()); i++)
+    const auto expectedMessages = expected.value("expectedMessages", json::array());
+    for (size_t i = 0; i < std::min(messages.size(), expectedMessages.size()); i++)
     {
-        auto msg = messages[i];
-        auto value = expectedMessages->getElement<std::string>(i);
+        const auto &msg = messages[i];
+        const std::string value = expectedMessages[i];
         if (msg.type() != typeid(std::string)) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
             "cant handle this message type: " + msg.getTypeString());
         auto actual = msg.extract<std::string>();
@@ -220,25 +222,25 @@ void CollectorSink::verifyTestPlanExpectedMessages(const Poco::JSON::Object::Ptr
             Poco::format("Value check for message %z: expected %s -> actual %s", i, value, actual));
     }
 
-    if (messages.size() != expectedMessages->size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
-        Poco::format("Check expected %z messages, actual %z messages", expectedMessages->size(), messages.size()));
+    if (messages.size() != expectedMessages.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+        Poco::format("Check expected %z messages, actual %z messages", expectedMessages.size(), messages.size()));
 }
 
 
 /***********************************************************************
  * Verify test plan helper -- check packets
  **********************************************************************/
-void CollectorSink::verifyTestPlanExpectedPackets(const Poco::JSON::Object::Ptr &expected, const std::vector<Pothos::Packet> &packets, const Pothos::DType &expectedDType)
+void CollectorSink::verifyTestPlanExpectedPackets(const json &expected, const std::vector<Pothos::Packet> &packets, const Pothos::DType &expectedDType)
 {
-    auto expectedPackets = expected->getArray("expectedPackets");
-    for (size_t i = 0; i < std::min(packets.size(), expectedPackets->size()); i++)
+    const auto expectedPackets = expected.value("expectedPackets", json::array());
+    for (size_t i = 0; i < std::min(packets.size(), expectedPackets.size()); i++)
     {
-        auto pkt = packets[i];
-        auto expectedPacket = expectedPackets->getObject(i);
+        const auto &pkt = packets[i];
+        const auto &expectedPacket = expectedPackets[i];
         try
         {
             verifyTestPlanExpectedValues(expectedPacket, pkt.payload, expectedDType);
-            if (expectedPacket->has("expectedLabels"))
+            if (expectedPacket.count("expectedLabels"))
                 verifyTestPlanExpectedLabels(expectedPacket, pkt.labels);
         }
         catch (const Pothos::Exception &ex)
@@ -248,6 +250,6 @@ void CollectorSink::verifyTestPlanExpectedPackets(const Poco::JSON::Object::Ptr 
         }
     }
 
-    if (packets.size() != expectedPackets->size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
-        Poco::format("Check expected %z packets, actual %z packets", expectedPackets->size(), packets.size()));
+    if (packets.size() != expectedPackets.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+        Poco::format("Check expected %z packets, actual %z packets", expectedPackets.size(), packets.size()));
 }
