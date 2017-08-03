@@ -1,12 +1,14 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
 #include <Pothos/Remote.hpp>
-#include <Poco/JSON/Object.h>
 #include <iostream>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_gateway)
 {
@@ -15,10 +17,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_gateway)
     auto gateway = Pothos::BlockRegistry::make("/blocks/gateway");
 
     //create a test plan
-    Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());
-    testPlan->set("enableBuffers", true);
-    testPlan->set("enableLabels", true);
-    testPlan->set("enableMessages", true);
+    json testPlan;
+    testPlan["enableBuffers"] = true;
+    testPlan["enableLabels"] = true;
+    testPlan["enableMessages"] = true;
 
     //run the topology
     std::cout << "run the topology\n";
@@ -30,7 +32,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_gateway)
 
         //test the drop mode
         gateway.callVoid("setMode", "DROP");
-        feeder.callProxy("feedTestPlan", testPlan);
+        feeder.callProxy("feedTestPlan", testPlan.dump());
         POTHOS_TEST_TRUE(topology.waitInactive());
         POTHOS_TEST_EQUAL(collector.call<Pothos::BufferChunk>("getBuffer").length, 0);
         POTHOS_TEST_TRUE(collector.call<std::vector<Pothos::Label>>("getLabels").empty());
@@ -38,7 +40,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_gateway)
 
         //test the backup mode
         gateway.callVoid("setMode", "BACKUP");
-        auto expected = feeder.callProxy("feedTestPlan", testPlan);
+        auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
         POTHOS_TEST_TRUE(topology.waitInactive());
         POTHOS_TEST_EQUAL(collector.call<Pothos::BufferChunk>("getBuffer").length, 0);
         POTHOS_TEST_TRUE(collector.call<std::vector<Pothos::Label>>("getLabels").empty());

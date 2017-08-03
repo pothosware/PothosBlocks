@@ -1,12 +1,14 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
 #include <Poco/TemporaryFile.h>
-#include <Poco/JSON/Object.h>
 #include <iostream>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
 {
@@ -24,13 +26,13 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     fileSink.callVoid("setFilePath", tempFile.path());
 
     //create a test plan
-    Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());
-    testPlan->set("enableBuffers", true);
-    testPlan->set("minTrials", 100);
-    testPlan->set("maxTrials", 200);
-    testPlan->set("minSize", 512);
-    testPlan->set("maxSize", 2048);
-    auto expected = feeder.callProxy("feedTestPlan", testPlan);
+    json testPlan;
+    testPlan["enableBuffers"] = true;
+    testPlan["minTrials"] = 100;
+    testPlan["maxTrials"] = 200;
+    testPlan["minSize"] = 512;
+    testPlan["maxSize"] = 2048;
+    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
 
     //run a topology that sends feeder to file
     {

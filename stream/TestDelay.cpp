@@ -5,7 +5,6 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
 #include <Pothos/Remote.hpp>
-#include <Poco/JSON/Object.h>
 #include <iostream>
 
 static void delayBlockTestCase(const int delayVal)

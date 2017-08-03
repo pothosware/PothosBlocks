@@ -1,13 +1,15 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
 #include <Poco/Format.h>
-#include <Poco/JSON/Object.h>
 #include <Pothos/Util/Network.hpp>
 #include <iostream>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 static void network_test_harness(const std::string &scheme, const bool serverIsSource)
 {
@@ -52,33 +54,28 @@ static void network_test_harness(const std::string &scheme, const bool serverIsS
     topology.connect(feeder, 0, sink, 0);
 
     //create the testplan with large and numerous payloads
-    Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());
-    testPlan->set("enableLabels", true);
-    testPlan->set("enableMessages", true);
-    testPlan->set("minTrials", 100);
-    testPlan->set("maxTrials", 200);
-    testPlan->set("minSize", 512);
-    testPlan->set("maxSize", 1048*8);
+    json testPlan;
+    testPlan["enableLabels"] = true;
+    testPlan["enableMessages"] = true;
+    testPlan["minTrials"] = 100;
+    testPlan["maxTrials"] = 200;
+    testPlan["minSize"] = 512;
+    testPlan["maxSize"] = 1048*8;
 
     //test buffers with labels and messages
     std::cout << "Buffer based test" << std::endl;
-    testPlan->set("enablePackets", false);
-    testPlan->set("enableBuffers", true);
-    auto expected = feeder.callProxy("feedTestPlan", testPlan);
+    testPlan["enablePackets"] = false;
+    testPlan["enableBuffers"] = true;
+    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
     topology.commit();
     POTHOS_TEST_TRUE(topology.waitInactive());
     collector.callVoid("verifyTestPlan", expected);
 
-    //work around bug in poco 1.6.1:
-    //https://github.com/pocoproject/poco/issues/933
-    testPlan->remove("enablePackets");
-    testPlan->remove("enableBuffers");
-
     //test packets with labels and messages
     std::cout << "Packet based test" << std::endl;
-    testPlan->set("enablePackets", true);
-    testPlan->set("enableBuffers", false);
-    expected = feeder.callProxy("feedTestPlan", testPlan);
+    testPlan["enablePackets"] = true;
+    testPlan["enableBuffers"] = false;
+    expected = feeder.callProxy("feedTestPlan", testPlan.dump());
     topology.commit();
     POTHOS_TEST_TRUE(topology.waitInactive());
     collector.callVoid("verifyTestPlan", expected);
