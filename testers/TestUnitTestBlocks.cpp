@@ -1,11 +1,13 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
-#include <Poco/JSON/Object.h>
 #include <iostream>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_unit_test_blocks)
 {
@@ -82,21 +84,21 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_unit_testplans)
     topology.connect(feeder, 0, collector, 0);
 
     //create a test plan for streams
-    Poco::JSON::Object::Ptr testPlan0(new Poco::JSON::Object());
-    testPlan0->set("enableBuffers", true);
-    testPlan0->set("enableLabels", true);
-    testPlan0->set("enableMessages", true);
-    auto expected0 = feeder.callProxy("feedTestPlan", testPlan0);
+    json testPlan0;
+    testPlan0["enableBuffers"] = true;
+    testPlan0["enableLabels"] = true;
+    testPlan0["enableMessages"] = true;
+    auto expected0 = feeder.callProxy("feedTestPlan", testPlan0.dump());
     topology.commit();
     POTHOS_TEST_TRUE(topology.waitInactive());
     collector.callVoid("verifyTestPlan", expected0);
 
     //create a test plan for packets
-    Poco::JSON::Object::Ptr testPlan1(new Poco::JSON::Object());
-    testPlan1->set("enablePackets", true);
-    testPlan1->set("enableLabels", true);
-    testPlan1->set("enableMessages", true);
-    auto expected1 = feeder.callProxy("feedTestPlan", testPlan1);
+    json testPlan1;
+    testPlan1["enablePackets"] = true;
+    testPlan1["enableLabels"] = true;
+    testPlan1["enableMessages"] = true;
+    auto expected1 = feeder.callProxy("feedTestPlan", testPlan1.dump());
     topology.commit();
     POTHOS_TEST_TRUE(topology.waitInactive());
     collector.callVoid("verifyTestPlan", expected1);

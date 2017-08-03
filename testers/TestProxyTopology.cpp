@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -6,8 +6,10 @@
 #include <Pothos/Proxy.hpp>
 #include <Pothos/Remote.hpp>
 #include <Pothos/Util/Network.hpp>
-#include <Poco/JSON/Object.h>
 #include <iostream>
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_topology)
 {
@@ -17,11 +19,11 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_topology)
     auto collector = registry.callProxy("/blocks/collector_sink", "int");
 
     //create a test plan
-    Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());
-    testPlan->set("enableBuffers", true);
-    testPlan->set("enableLabels", true);
-    testPlan->set("enableMessages", true);
-    auto expected = feeder.callProxy("feedTestPlan", testPlan);
+    json testPlan;
+    testPlan["enableBuffers"] = true;
+    testPlan["enableLabels"] = true;
+    testPlan["enableMessages"] = true;
+    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
 
     //run the topology
     std::cout << "run the topology\n";
@@ -85,11 +87,11 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_subtopology)
     POTHOS_TEST_TRUE(outputInfo[0].dtype == Pothos::DType());
 
     //create a test plan
-    Poco::JSON::Object::Ptr testPlan(new Poco::JSON::Object());
-    testPlan->set("enableBuffers", true);
-    testPlan->set("enableLabels", true);
-    testPlan->set("enableMessages", true);
-    auto expected = feeder.callProxy("feedTestPlan", testPlan);
+    json testPlan;
+    testPlan["enableBuffers"] = true;
+    testPlan["enableLabels"] = true;
+    testPlan["enableMessages"] = true;
+    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
 
     //run the topology
     std::cout << "run the topology\n";
