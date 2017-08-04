@@ -10,6 +10,7 @@ endif()
 ########################################################################
 # Packet blocks module
 ########################################################################
+include_directories(${JSON_HPP_INCLUDE_DIR})
 POTHOS_MODULE_UTIL(
     TARGET PacketBlocks
     SOURCES

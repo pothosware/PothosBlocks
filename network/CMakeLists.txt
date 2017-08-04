@@ -14,6 +14,7 @@ endif()
 file(GLOB UDT_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/udt4/src/*.cpp)
 add_definitions(-DUDT_EXPORTS)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/udt4/src)
+include_directories(${JSON_HPP_INCLUDE_DIR})
 
 if (WIN32)
     list(APPEND MODULE_LIBRARIES ws2_32)
