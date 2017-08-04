@@ -11,6 +11,14 @@ else()
 endif()
 
 ########################################################################
+## Feature registration
+########################################################################
+include(FeatureSummary)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_BLOCKS "Enable Pothos Blocks component" ON "Pothos_FOUND" OFF)
+add_feature_info(Blocks ENABLE_BLOCKS "A collection of general purpose blocks")
+
+########################################################################
 # json.hpp header
 ########################################################################
 find_path(JSON_HPP_INCLUDE_DIR NAMES json.hpp PATH_SUFFIXES nlohmann)
@@ -18,14 +26,6 @@ find_path(JSON_HPP_INCLUDE_DIR NAMES json.hpp PATH_SUFFIXES nlohmann)
 if (NOT JSON_HPP_INCLUDE_DIR)
     message(WARNING "Pothos Blocks toolkit requires json.hpp, skipping...")
 endif (NOT JSON_HPP_INCLUDE_DIR)
-
-########################################################################
-## Feature registration
-########################################################################
-include(FeatureSummary)
-include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_BLOCKS "Enable Pothos Blocks component" ON "Pothos_FOUND;JSON_HPP_INCLUDE_DIR" OFF)
-add_feature_info(Blocks ENABLE_BLOCKS "A collection of general purpose blocks")
 
 ########################################################################
 # Build subdirectories

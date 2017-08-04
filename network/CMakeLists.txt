@@ -1,7 +1,7 @@
 ########################################################################
 ## Feature registration
 ########################################################################
-cmake_dependent_option(ENABLE_BLOCKS_NETWORK "Enable Pothos Blocks.Network component" ON "ENABLE_BLOCKS" OFF)
+cmake_dependent_option(ENABLE_BLOCKS_NETWORK "Enable Pothos Blocks.Network component" ON "ENABLE_BLOCKS;JSON_HPP_INCLUDE_DIR" OFF)
 add_feature_info("  Network" ENABLE_BLOCKS_NETWORK "Network interface source/sink blocks")
 if (NOT ENABLE_BLOCKS_NETWORK)
     return()

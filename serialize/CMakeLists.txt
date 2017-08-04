@@ -1,7 +1,7 @@
 ########################################################################
 ## Feature registration
 ########################################################################
-cmake_dependent_option(ENABLE_BLOCKS_SERIALIZE "Enable Pothos Blocks.Serialize component" ON "ENABLE_BLOCKS" OFF)
+cmake_dependent_option(ENABLE_BLOCKS_SERIALIZE "Enable Pothos Blocks.Serialize component" ON "ENABLE_BLOCKS;JSON_HPP_INCLUDE_DIR" OFF)
 add_feature_info("  Serialize" ENABLE_BLOCKS_SERIALIZE "Serialize data to/from byte stream")
 if (NOT ENABLE_BLOCKS_SERIALIZE)
     return()

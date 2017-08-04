@@ -1,7 +1,7 @@
 ########################################################################
 ## Feature registration
 ########################################################################
-cmake_dependent_option(ENABLE_BLOCKS_TESTERS "Enable Pothos Blocks.Testers component" ON "ENABLE_BLOCKS" OFF)
+cmake_dependent_option(ENABLE_BLOCKS_TESTERS "Enable Pothos Blocks.Testers component" ON "ENABLE_BLOCKS;JSON_HPP_INCLUDE_DIR" OFF)
 add_feature_info("  Testers" ENABLE_BLOCKS_TESTERS "Unit test verification support blocks")
 if (NOT ENABLE_BLOCKS_TESTERS)
     return()
