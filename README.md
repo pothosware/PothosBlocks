@@ -4,6 +4,10 @@ The processing blocks found in this project offer core functionality,
 and do not incur external dependencies.
 More information to come as this project fills in.
 
+## Documentation
+
+* https://github.com/pothosware/PothosBlocks/wiki
+
 ## Dependencies
 
 * Pothos library

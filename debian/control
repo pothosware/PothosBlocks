@@ -9,9 +9,9 @@ Build-Depends:
     nlohmann-json-dev,
     libpothos-dev
 Standards-Version: 3.9.8
-Homepage: https://github.com/pothosware/pothos-blocks/wiki
-Vcs-Git: https://github.com/pothosware/pothos-blocks.git
-Vcs-Browser: https://github.com/pothosware/pothos-blocks
+Homepage: https://github.com/pothosware/PothosBlocks/wiki
+Vcs-Git: https://github.com/pothosware/PothosBlocks.git
+Vcs-Browser: https://github.com/pothosware/PothosBlocks
 
 Package: pothos-modules-blocks
 Section: libs
