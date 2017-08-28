@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.5.0 (pending)
 ==========================
 
+- Removed UDT protocol support from network source/sink blocks
 - Renamed the project repo from pothos-blocks to PothosBlocks
 - Require Pothos version 0.6 for test plan JSON format change
 - Alternative JSON C++ library to handle JSON parsing/emitting

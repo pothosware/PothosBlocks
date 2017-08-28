@@ -87,6 +87,4 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_network_blocks)
 {
     network_test_harness("tcp", true);
     network_test_harness("tcp", false);
-    //network_test_harness("udt", true);
-    //network_test_harness("udt", false);
 }

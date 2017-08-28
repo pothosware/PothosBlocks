@@ -11,7 +11,6 @@
 #include <Poco/ByteOrder.h>
 #include <Poco/SingletonHolder.h>
 #include <mutex>
-#include <udt.h>
 #include <cassert>
 #include <iostream>
 #include <algorithm> //min/max
@@ -112,143 +111,6 @@ struct PothosPacketSocketEndpointInterfaceTcp : PothosPacketSocketEndpointInterf
     bool connected;
     Poco::Net::ServerSocket serverSock;
     Poco::Net::StreamSocket clientSock;
-};
-
-/***********************************************************************
- * UDT implementation of interface
- **********************************************************************/
-struct UDTSession
-{
-    UDTSession(void)
-    {
-        UDT::startup();
-    }
-    ~UDTSession(void)
-    {
-        UDT::cleanup();
-    }
-};
-
-static std::mutex &getUdtSessionMutex(void)
-{
-    static Poco::SingletonHolder<std::mutex> sh;
-    return *sh.get();
-}
-
-static std::shared_ptr<UDTSession> getUDTSession(void)
-{
-    std::unique_lock<std::mutex> lock(getUdtSessionMutex());
-    static std::weak_ptr<UDTSession> UDTWeakSession;
-    std::shared_ptr<UDTSession> sess = UDTWeakSession.lock();
-    if (not sess)
-    {
-        sess.reset(new UDTSession());
-        UDTWeakSession = sess;
-    }
-    return sess;
-}
-
-struct PothosPacketSocketEndpointInterfaceUdt : PothosPacketSocketEndpointInterface
-{
-    PothosPacketSocketEndpointInterfaceUdt(const Poco::Net::SocketAddress &addr, const bool server):
-        server(server),
-        connected(false),
-        sess(getUDTSession())
-    {
-        if (server)
-        {
-            this->serverSock = makeSocket(addr.af());
-            if (UDT::ERROR == UDT::bind(this->serverSock, addr.addr(), addr.length()))
-            {
-                throw Pothos::RuntimeException("UDT::bind("+addr.toString()+")", UDT::getlasterror().getErrorMessage());
-            }
-            UDT::listen(this->serverSock, 1/*only one client expected*/);
-        }
-        else
-        {
-            this->clientSock = makeSocket(addr.af());
-            if (UDT::ERROR == UDT::connect(this->clientSock, addr.addr(), addr.length()))
-            {
-                throw Pothos::RuntimeException("UDT::connect("+addr.toString()+")", UDT::getlasterror().getErrorMessage());
-            }
-            this->connected = true;
-        }
-    }
-
-    static UDTSOCKET makeSocket(const int af)
-    {
-        UDTSOCKET sock = UDT::socket(af, SOCK_STREAM, 0);
-        //Arbitrary buffer size limit in OSX that must be set on the socket,
-        //or UDT will try to set one that is too large and fail bind/connect.
-        #if POCO_OS == POCO_OS_MAC_OS_X
-        int size = 1024*21;
-        UDT::setsockopt(sock, 0, UDP_RCVBUF, &size, int(sizeof(size)));
-        #endif
-        return sock;
-    }
-
-    ~PothosPacketSocketEndpointInterfaceUdt(void)
-    {
-        UDT::close(clientSock);
-        if (server) UDT::close(serverSock);
-    }
-
-    std::string getPort(void) const
-    {
-        sockaddr addr;
-        int addrlen = sizeof(addr);
-        UDT::getsockname(server?serverSock:clientSock, &addr, &addrlen);
-        return std::to_string(Poco::Net::SocketAddress(&addr, addrlen).port());
-    }
-
-    bool isRecvReady(const std::chrono::high_resolution_clock::duration &timeout)
-    {
-        const auto micros = std::chrono::duration_cast<std::chrono::microseconds>(timeout).count();
-        struct timeval tv;
-        tv.tv_sec = micros / 1000000;
-        tv.tv_usec = micros % 1000000;
-
-        if (not connected)
-        {
-            UDT::UDSET readfds;
-            UD_SET(serverSock, &readfds);
-            if (UDT::select(1, &readfds, nullptr, nullptr, &tv) != 1) return false;
-
-            sockaddr addr;
-            int addrlen = sizeof(addr);
-            this->clientSock = UDT::accept(this->serverSock, &addr, &addrlen);
-            if (addrlen == 0)
-            {
-                throw Pothos::RuntimeException("UDT::accept()", UDT::getlasterror().getErrorMessage());
-            }
-            this->connected = true;
-            return false;
-        }
-
-        UDT::UDSET readfds;
-        UD_SET(clientSock, &readfds);
-        return UDT::select(1, &readfds, nullptr, nullptr, &tv) == 1;
-    }
-
-    int send(const void *buff, const size_t length, const int flags)
-    {
-        int r = UDT::send(this->clientSock, (const char *)buff, int(length), flags);
-        if (r == UDT::ERROR) throw Pothos::RuntimeException("UDT::send()", UDT::getlasterror().getErrorMessage());
-        return r;
-    }
-
-    int recv(void *buff, const size_t length, const int flags)
-    {
-        int r = UDT::recv(this->clientSock, (char *)buff, int(length), flags);
-        if (r == UDT::ERROR) throw Pothos::RuntimeException("UDT::recv()", UDT::getlasterror().getErrorMessage());
-        return r;
-    }
-
-    bool server;
-    bool connected;
-    UDTSOCKET serverSock;
-    UDTSOCKET clientSock;
-    std::shared_ptr<UDTSession> sess;
 };
 
 /***********************************************************************
@@ -362,14 +224,6 @@ PothosPacketSocketEndpoint::PothosPacketSocketEndpoint(const std::string &uri, c
         else if (uriObj.getScheme() == "tcp" and opt == "CONNECT")
         {
             _impl->iface = new PothosPacketSocketEndpointInterfaceTcp(addr, false);
-        }
-        else if (uriObj.getScheme() == "udt" and opt == "BIND")
-        {
-            _impl->iface = new PothosPacketSocketEndpointInterfaceUdt(addr, true);
-        }
-        else if (uriObj.getScheme() == "udt" and opt == "CONNECT")
-        {
-            _impl->iface = new PothosPacketSocketEndpointInterfaceUdt(addr, false);
         }
         else
         {

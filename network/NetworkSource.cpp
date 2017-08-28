@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include "SocketEndpoint.hpp"
@@ -15,16 +15,15 @@
  * The network source deserializes data from the socket and produces on its output port.
  * Socket data encompasses stream buffers, inline labels, and async messages.
  *
- * The underlying supports two transport options:
+ * The underlying supports the tcp transport option:
  * TCP - tcp://host:port
- * or UDT - udt://host:port
  *
  * |category /Network
  * |category /Sources
  * |keywords source network
  *
  * |param uri[URI] The bind or connection uri string.
- * |default "udt://192.168.10.2:1234"
+ * |default "tcp://192.168.10.2:1234"
  *
  * |param opt[Option] Control if the socket is a server (BIND) or client (CONNECT).
  * The "DISCONNECT" option is used to make a disconnected endpoint for object inspection.
