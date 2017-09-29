@@ -31,26 +31,26 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_gateway)
         topology.commit();
 
         //test the drop mode
-        gateway.callVoid("setMode", "DROP");
-        feeder.callProxy("feedTestPlan", testPlan.dump());
+        gateway.call("setMode", "DROP");
+        feeder.call("feedTestPlan", testPlan.dump());
         POTHOS_TEST_TRUE(topology.waitInactive());
         POTHOS_TEST_EQUAL(collector.call<Pothos::BufferChunk>("getBuffer").length, 0);
         POTHOS_TEST_TRUE(collector.call<std::vector<Pothos::Label>>("getLabels").empty());
         POTHOS_TEST_TRUE(collector.call<std::vector<Pothos::Object>>("getMessages").empty());
 
         //test the backup mode
-        gateway.callVoid("setMode", "BACKUP");
-        auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+        gateway.call("setMode", "BACKUP");
+        auto expected = feeder.call("feedTestPlan", testPlan.dump());
         POTHOS_TEST_TRUE(topology.waitInactive());
         POTHOS_TEST_EQUAL(collector.call<Pothos::BufferChunk>("getBuffer").length, 0);
         POTHOS_TEST_TRUE(collector.call<std::vector<Pothos::Label>>("getLabels").empty());
         POTHOS_TEST_TRUE(collector.call<std::vector<Pothos::Object>>("getMessages").empty());
 
         //test the forward mode
-        gateway.callVoid("setMode", "FORWARD");
+        gateway.call("setMode", "FORWARD");
         POTHOS_TEST_TRUE(topology.waitInactive());
         std::cout << "verifyTestPlan!\n";
-        collector.callVoid("verifyTestPlan", expected);
+        collector.call("verifyTestPlan", expected);
     }
 
     std::cout << "done!\n";

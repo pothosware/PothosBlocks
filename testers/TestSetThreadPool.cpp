@@ -16,14 +16,14 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_set_thread_pool)
 
     //set one pool here
     Pothos::ThreadPool tp0(1);
-    feeder.callVoid("setThreadPool", tp0);
+    feeder.call("setThreadPool", tp0);
 
     //create a test plan
     json testPlan;
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
     testPlan["enableMessages"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     {
@@ -31,10 +31,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_set_thread_pool)
         topology.connect(feeder, 0, collector, 0);
         //and set another after connecting
         Pothos::ThreadPool tp1(1);
-        collector.callVoid("setThreadPool", tp1);
+        collector.call("setThreadPool", tp1);
         topology.commit();
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 }

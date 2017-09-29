@@ -35,8 +35,8 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_json_topology)
 {
     auto env = Pothos::ProxyEnvironment::make("managed");
     auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = registry.call("/blocks/feeder_source", "int");
+    auto collector = registry.call("/blocks/collector_sink", "int");
     auto passthrough = Pothos::Topology::make(PASSTHROUGH_JSON);
 
     //create a test plan
@@ -44,20 +44,20 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_json_topology)
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
     testPlan["enableMessages"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     std::cout << "run the topology\n";
     {
-        auto topology = env->findProxy("Pothos/Topology").callProxy("make");
-        topology.callVoid("connect", feeder, "0", passthrough, "in0");
-        topology.callVoid("connect", passthrough, "out0", collector, "0");
-        topology.callVoid("commit");
+        auto topology = env->findProxy("Pothos/Topology").call("make");
+        topology.call("connect", feeder, "0", passthrough, "in0");
+        topology.call("connect", passthrough, "out0", collector, "0");
+        topology.call("commit");
         POTHOS_TEST_TRUE(topology.call<bool>("waitInactive"));
     }
 
     std::cout << "verifyTestPlan!\n";
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 
     std::cout << "done!\n";
 }

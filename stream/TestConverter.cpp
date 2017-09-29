@@ -20,7 +20,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_converter)
     json testPlan;
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     {
@@ -31,5 +31,5 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_converter)
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 }

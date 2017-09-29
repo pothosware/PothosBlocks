@@ -24,16 +24,16 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_network_topology)
 
     //create local and remote unit test blocks
     std::cout << "create remote feeder\n";
-    auto feeder = remoteReg.callProxy("/blocks/feeder_source", "int");
+    auto feeder = remoteReg.call("/blocks/feeder_source", "int");
     std::cout << "create local collector\n";
-    auto collector = localReg.callProxy("/blocks/collector_sink", "int");
+    auto collector = localReg.call("/blocks/collector_sink", "int");
 
     //create a test plan
     json testPlan;
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
     testPlan["enableMessages"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     std::cout << "run the topology\n";
@@ -44,5 +44,5 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_network_topology)
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 }

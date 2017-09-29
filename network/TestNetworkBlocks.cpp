@@ -66,19 +66,19 @@ static void network_test_harness(const std::string &scheme, const bool serverIsS
     std::cout << "Buffer based test" << std::endl;
     testPlan["enablePackets"] = false;
     testPlan["enableBuffers"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
     topology.commit();
     POTHOS_TEST_TRUE(topology.waitInactive());
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 
     //test packets with labels and messages
     std::cout << "Packet based test" << std::endl;
     testPlan["enablePackets"] = true;
     testPlan["enableBuffers"] = false;
-    expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    expected = feeder.call("feedTestPlan", testPlan.dump());
     topology.commit();
     POTHOS_TEST_TRUE(topology.waitInactive());
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 
     std::cout << "Done!\n" << std::endl;
 }

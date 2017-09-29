@@ -20,10 +20,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     POTHOS_TEST_TRUE(tempFile.createFile());
 
     auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
-    fileSource.callVoid("setFilePath", tempFile.path());
+    fileSource.call("setFilePath", tempFile.path());
 
     auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
-    fileSink.callVoid("setFilePath", tempFile.path());
+    fileSink.call("setFilePath", tempFile.path());
 
     //create a test plan
     json testPlan;
@@ -32,7 +32,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     testPlan["maxTrials"] = 200;
     testPlan["minSize"] = 512;
     testPlan["maxSize"] = 2048;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run a topology that sends feeder to file
     {
@@ -50,5 +50,5 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 }

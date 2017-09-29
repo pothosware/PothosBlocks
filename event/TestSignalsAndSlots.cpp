@@ -14,8 +14,8 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_signals_and_slots)
     auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
 
     //feed some msgs
-    feeder.callProxy("feedMessage", "msg0");
-    feeder.callProxy("feedMessage", "msg1");
+    feeder.call("feedMessage", "msg0");
+    feeder.call("feedMessage", "msg1");
 
     //run the topology
     {
@@ -49,11 +49,11 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator)
     auto messageToSignal = Pothos::BlockRegistry::make("/blocks/message_to_signal", "changeEvent");
     auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
     auto transform = Pothos::BlockRegistry::make("/blocks/evaluator", std::vector<std::string>(1, "val"));
-    transform.callVoid("setExpression", "2*val");
+    transform.call("setExpression", "2*val");
 
     //feed some msgs
-    feeder.callProxy("feedMessage", Pothos::Object(11));
-    feeder.callProxy("feedMessage", Pothos::Object(-32));
+    feeder.call("feedMessage", Pothos::Object(11));
+    feeder.call("feedMessage", Pothos::Object(-32));
 
     //run the topology
     {
@@ -82,13 +82,13 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multiarg)
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
     auto slotToMessage = Pothos::BlockRegistry::make("/blocks/slot_to_message", "handleEvent");
     auto transform = Pothos::BlockRegistry::make("/blocks/evaluator", std::vector<std::string>(1, "val"));
-    transform.callVoid("setExpression", "2*val0 + val1");
+    transform.call("setExpression", "2*val0 + val1");
 
     //test message with two args - object vector format since we are not using messageToSignal
     std::vector<Pothos::Object> args;
     args.emplace_back(11);
     args.emplace_back(-32);
-    feeder.callProxy("feedMessage", args);
+    feeder.call("feedMessage", args);
 
     //run the topology
     {
@@ -122,11 +122,11 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multislot)
     varNames.push_back("valX");
     varNames.push_back("valY");
     auto transform = Pothos::BlockRegistry::make("/blocks/evaluator", varNames);
-    transform.callVoid("setExpression", "valX - 2*valY");
+    transform.call("setExpression", "valX - 2*valY");
 
     //feed some msgs
-    feederX.callProxy("feedMessage", Pothos::Object(11));
-    feederY.callProxy("feedMessage", Pothos::Object(-32));
+    feederX.call("feedMessage", Pothos::Object(11));
+    feederY.call("feedMessage", Pothos::Object(-32));
 
     //run the topology
     {

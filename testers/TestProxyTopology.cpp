@@ -15,27 +15,27 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_topology)
 {
     auto env = Pothos::ProxyEnvironment::make("managed");
     auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = registry.call("/blocks/feeder_source", "int");
+    auto collector = registry.call("/blocks/collector_sink", "int");
 
     //create a test plan
     json testPlan;
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
     testPlan["enableMessages"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     std::cout << "run the topology\n";
     {
-        auto topology = env->findProxy("Pothos/Topology").callProxy("make");
-        topology.callVoid("connect", feeder, "0", collector, "0");
-        topology.callVoid("commit");
+        auto topology = env->findProxy("Pothos/Topology").call("make");
+        topology.call("connect", feeder, "0", collector, "0");
+        topology.call("commit");
         POTHOS_TEST_TRUE(topology.call<bool>("waitInactive"));
     }
 
     std::cout << "verifyTestPlan!\n";
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 
     std::cout << "done!\n";
 }
@@ -45,8 +45,8 @@ static Pothos::Topology* makeForwardingTopology(void)
 {
     auto env = Pothos::ProxyEnvironment::make("managed");
     auto registry = env->findProxy("Pothos/BlockRegistry");
-    auto forwarder = registry.callProxy("/blocks/gateway");
-    forwarder.callVoid("setMode", "FORWARD");
+    auto forwarder = registry.call("/blocks/gateway");
+    forwarder.call("setMode", "FORWARD");
     auto t = new Pothos::Topology();
     t->connect(t, "t_in", forwarder, "0");
     t->connect(forwarder, "0", t, "t_out");
@@ -68,10 +68,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_subtopology)
     auto registry = env->findProxy("Pothos/BlockRegistry");
     auto registryRemote = envRemote->findProxy("Pothos/BlockRegistry");
 
-    auto feeder = registry.callProxy("/blocks/feeder_source", "int");
-    auto collector = registry.callProxy("/blocks/collector_sink", "int");
+    auto feeder = registry.call("/blocks/feeder_source", "int");
+    auto collector = registry.call("/blocks/collector_sink", "int");
     std::cout << "make the remote subtopology\n";
-    auto forwarder = registryRemote.callProxy("/blocks/tests/forwarder_topology");
+    auto forwarder = registryRemote.call("/blocks/tests/forwarder_topology");
 
     //check port info
     auto inputInfo = forwarder.call<std::vector<Pothos::PortInfo>>("inputPortInfo");
@@ -91,7 +91,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_subtopology)
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
     testPlan["enableMessages"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     std::cout << "run the topology\n";
@@ -104,7 +104,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_subtopology)
     }
 
     std::cout << "verifyTestPlan!\n";
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 
     std::cout << "done!\n";
 }

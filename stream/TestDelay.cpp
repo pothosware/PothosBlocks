@@ -16,8 +16,8 @@ static void delayBlockTestCase(const int delayVal)
     //setup
     std::cout << "delayBlockTestCase " << delayVal << std::endl;
     Pothos::BufferChunk buff0(typeid(int), 100);
-    feeder.callVoid("feedBuffer", buff0);
-    delay.callVoid("setDelay", delayVal);
+    feeder.call("feedBuffer", buff0);
+    delay.call("setDelay", delayVal);
 
     //run the topology
     std::cout << "run the topology\n";

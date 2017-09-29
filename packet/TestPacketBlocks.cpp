@@ -17,7 +17,7 @@ static void test_packet_blocks_with_mtu(const size_t mtu)
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     auto s2p = Pothos::BlockRegistry::make("/blocks/stream_to_packet");
-    s2p.callVoid("setMTU", mtu);
+    s2p.call("setMTU", mtu);
     auto p2s = Pothos::BlockRegistry::make("/blocks/packet_to_stream");
 
     //create a test plan
@@ -25,7 +25,7 @@ static void test_packet_blocks_with_mtu(const size_t mtu)
     testPlan["enableBuffers"] = true;
     testPlan["enableLabels"] = true;
     testPlan["enableMessages"] = true;
-    auto expected = feeder.callProxy("feedTestPlan", testPlan.dump());
+    auto expected = feeder.call("feedTestPlan", testPlan.dump());
 
     //run the topology
     {
@@ -37,7 +37,7 @@ static void test_packet_blocks_with_mtu(const size_t mtu)
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    collector.callVoid("verifyTestPlan", expected);
+    collector.call("verifyTestPlan", expected);
 }
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_packet_blocks)
@@ -53,15 +53,15 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_packet_to_stream)
     auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
     auto p2s = Pothos::BlockRegistry::make("/blocks/packet_to_stream");
-    p2s.callVoid("setFrameStartId", "SOF0");
-    p2s.callVoid("setFrameEndId", "EOF0");
+    p2s.call("setFrameStartId", "SOF0");
+    p2s.call("setFrameEndId", "EOF0");
 
     //create test data
     Pothos::Packet p0;
     p0.payload = Pothos::BufferChunk("int", 100);
     for (size_t i = 0; i < p0.payload.elements(); i++)
         p0.payload.as<int *>()[i] = std::rand();
-    feeder.callVoid("feedPacket", p0);
+    feeder.call("feedPacket", p0);
 
     //create the topology
     Pothos::Topology topology;
@@ -90,21 +90,21 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_stream_to_packet)
     auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
     auto s2p = Pothos::BlockRegistry::make("/blocks/stream_to_packet");
-    s2p.callVoid("setFrameStartId", "SOF0");
-    s2p.callVoid("setFrameEndId", "EOF0");
+    s2p.call("setFrameStartId", "SOF0");
+    s2p.call("setFrameEndId", "EOF0");
 
     //create test data
     Pothos::BufferChunk b0("int", 100);
     for (size_t i = 0; i < b0.elements(); i++)
         b0.as<int *>()[i] = std::rand();
-    feeder.callVoid("feedBuffer", b0);
+    feeder.call("feedBuffer", b0);
     const size_t sofIndex = 14;
     const size_t eofIndex = 77;
-    feeder.callVoid("feedLabel", Pothos::Label("NOPE", Pothos::Object(), sofIndex-10));
-    feeder.callVoid("feedLabel", Pothos::Label("SOF0", Pothos::Object(), sofIndex));
-    feeder.callVoid("feedLabel", Pothos::Label("NOPE", Pothos::Object(), (eofIndex+sofIndex)/2));
-    feeder.callVoid("feedLabel", Pothos::Label("EOF0", Pothos::Object(), eofIndex));
-    feeder.callVoid("feedLabel", Pothos::Label("NOPE", Pothos::Object(), eofIndex+10));
+    feeder.call("feedLabel", Pothos::Label("NOPE", Pothos::Object(), sofIndex-10));
+    feeder.call("feedLabel", Pothos::Label("SOF0", Pothos::Object(), sofIndex));
+    feeder.call("feedLabel", Pothos::Label("NOPE", Pothos::Object(), (eofIndex+sofIndex)/2));
+    feeder.call("feedLabel", Pothos::Label("EOF0", Pothos::Object(), eofIndex));
+    feeder.call("feedLabel", Pothos::Label("NOPE", Pothos::Object(), eofIndex+10));
 
     //create the topology
     Pothos::Topology topology;
