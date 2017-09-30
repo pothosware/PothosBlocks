@@ -29,7 +29,7 @@ static void delayBlockTestCase(const int delayVal)
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    auto buff1 = collector.call<Pothos::BufferChunk>("getBuffer");
+    Pothos::BufferChunk buff1 = collector.call("getBuffer");
     POTHOS_TEST_EQUAL(buff1.elements(), size_t(100-delayVal));
 }
 

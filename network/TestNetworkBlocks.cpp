@@ -24,7 +24,7 @@ static void network_test_harness(const std::string &scheme, const bool serverIsS
         server_uri, "BIND");
 
     //create client
-    auto client_uri = Poco::format("%s://%s", scheme, Pothos::Util::getLoopbackAddr(server.call<std::string>("getActualPort")));
+    std::string client_uri = Poco::format("%s://%s", scheme, Pothos::Util::getLoopbackAddr(server.call("getActualPort")));
     std::cout << "make client " << client_uri << std::endl;
     auto client = Pothos::BlockRegistry::make(
         (serverIsSource)?"/blocks/network_sink":"/blocks/network_source",

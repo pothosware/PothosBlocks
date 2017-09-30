@@ -43,9 +43,9 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_unit_test_blocks)
     }
 
     //collect the output
-    auto msgs = collector.call<std::vector<Pothos::Object>>("getMessages");
-    auto lbls = collector.call<std::vector<Pothos::Label>>("getLabels");
-    auto buff = collector.call<Pothos::BufferChunk>("getBuffer");
+    std::vector<Pothos::Object> msgs = collector.call("getMessages");
+    std::vector<Pothos::Label> lbls = collector.call("getLabels");
+    Pothos::BufferChunk buff = collector.call("getBuffer");
     std::cout << msgs.size() << std::endl;
     std::cout << lbls.size() << std::endl;
     std::cout << buff.length << std::endl;

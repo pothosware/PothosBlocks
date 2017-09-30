@@ -23,7 +23,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_periodic_trigger)
     }
 
     //collect the messages
-    auto msgs = collector.call<std::vector<Pothos::Object>>("getMessages");
+    std::vector<Pothos::Object> msgs = collector.call("getMessages");
     std::cout << msgs.size() << std::endl;
 
     //we expect 4 messages in one second,

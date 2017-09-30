@@ -71,10 +71,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_packet_to_stream)
     POTHOS_TEST_TRUE(topology.waitInactive());
 
     //check the result
-    const auto buffer = collector.call<Pothos::BufferChunk>("getBuffer");
+    const Pothos::BufferChunk buffer = collector.call("getBuffer");
     POTHOS_TEST_EQUAL(buffer.elements(), p0.payload.elements());
     POTHOS_TEST_EQUALA(buffer.as<const int *>(), p0.payload.as<const int *>(), p0.payload.elements());
-    const auto labels = collector.call<std::vector<Pothos::Label>>("getLabels");
+    const std::vector<Pothos::Label> labels = collector.call("getLabels");
     POTHOS_TEST_EQUAL(labels.size(), 2);
     POTHOS_TEST_EQUAL(labels[0].id, "SOF0");
     POTHOS_TEST_EQUAL(labels[0].index, 0);
@@ -114,7 +114,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_stream_to_packet)
     POTHOS_TEST_TRUE(topology.waitInactive());
 
     //check the result
-    const auto packets = collector.call<std::vector<Pothos::Packet>>("getPackets");
+    const std::vector<Pothos::Packet> packets = collector.call("getPackets");
     POTHOS_TEST_EQUAL(packets.size(), 1);
     const auto packet = packets.at(0);
     POTHOS_TEST_EQUAL(packet.labels.size(), 3);

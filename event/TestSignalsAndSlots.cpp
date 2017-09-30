@@ -28,7 +28,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_signals_and_slots)
     }
 
     //collect the messages
-    auto msgs = collector.call<std::vector<Pothos::Object>>("getMessages");
+    std::vector<Pothos::Object> msgs = collector.call("getMessages");
     std::cout << msgs.size() << std::endl;
 
     //check msgs
@@ -67,7 +67,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator)
     }
 
     //collect the messages
-    auto msgs = collector.call<std::vector<Pothos::Object>>("getMessages");
+    std::vector<Pothos::Object> msgs = collector.call("getMessages");
     std::cout << msgs.size() << std::endl;
 
     //check msgs
@@ -101,7 +101,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multiarg)
     }
 
     //collect the messages
-    auto msgs = collector.call<std::vector<Pothos::Object>>("getMessages");
+    std::vector<Pothos::Object> msgs = collector.call("getMessages");
     std::cout << msgs.size() << std::endl;
 
     //check msgs
@@ -142,7 +142,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_evaluator_multislot)
     }
 
     //collect the messages
-    auto msgs = collector.call<std::vector<Pothos::Object>>("getMessages");
+    std::vector<Pothos::Object> msgs = collector.call("getMessages");
     std::cout << msgs.size() << std::endl;
 
     //check msgs

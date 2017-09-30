@@ -74,13 +74,13 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_proxy_subtopology)
     auto forwarder = registryRemote.call("/blocks/tests/forwarder_topology");
 
     //check port info
-    auto inputInfo = forwarder.call<std::vector<Pothos::PortInfo>>("inputPortInfo");
+    std::vector<Pothos::PortInfo> inputInfo = forwarder.call("inputPortInfo");
     POTHOS_TEST_EQUAL(inputInfo.size(), 1);
     POTHOS_TEST_EQUAL(inputInfo[0].name, "t_in");
     POTHOS_TEST_TRUE(not inputInfo[0].isSigSlot);
     POTHOS_TEST_TRUE(inputInfo[0].dtype == Pothos::DType());
 
-    auto outputInfo = forwarder.call<std::vector<Pothos::PortInfo>>("outputPortInfo");
+    std::vector<Pothos::PortInfo> outputInfo = forwarder.call("outputPortInfo");
     POTHOS_TEST_EQUAL(outputInfo.size(), 1);
     POTHOS_TEST_EQUAL(outputInfo[0].name, "t_out");
     POTHOS_TEST_TRUE(not outputInfo[0].isSigSlot);
