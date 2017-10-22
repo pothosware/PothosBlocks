@@ -102,7 +102,7 @@ void NetworkSource::work(void)
     else if (type == PothosPacketTypeHeader)
     {
         std::istringstream iss(std::string(buffer.as<char *>(), buffer.length));
-        Pothos::ObjectM msg; msg.deserialize(iss);
+        Pothos::Object msg; msg.deserialize(iss);
         _packetHeader = msg.extract<Pothos::Packet>(); //store it, payload comes next
     }
     else if (type == PothosPacketTypePayload)
