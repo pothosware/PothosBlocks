@@ -42,7 +42,6 @@ public:
     {
         auto inputPort = this->input(0);
         auto outputPort = this->output(0);
-        inputPort->consume(inputPort->elements());
 
         //got a packet message
         if (inputPort->hasMessage())
@@ -63,10 +62,11 @@ public:
         auto buff = inputPort->buffer();
         if (buff.length != 0)
         {
-            auto outBuff = outputPort->buffer();
-            outBuff.dtype = outputPort->dtype();
-            outputPort->postBuffer(outBuff);
+            buff.dtype = outputPort->dtype();
+            outputPort->postBuffer(buff);
         }
+
+        inputPort->consume(inputPort->elements());
     }
 
     void propagateLabels(const Pothos::InputPort *port)
