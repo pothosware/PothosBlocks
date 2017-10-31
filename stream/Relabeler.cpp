@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -50,9 +50,8 @@ public:
         _keepPrimary(false)
     {
         this->setupInput(0);
-        this->setupInput("lbl");
+        _lblPort = this->setupInput("lbl");
         this->setupOutput(0, "", this->uid()); //unique domain because of buffer forwarding
-        _lblPort = this->input("lbl");
         this->registerCall(this, POTHOS_FCN_TUPLE(Relabeler, setKeepPrimary));
         this->registerCall(this, POTHOS_FCN_TUPLE(Relabeler, getKeepPrimary));
     }
