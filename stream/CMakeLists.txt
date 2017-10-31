@@ -22,6 +22,7 @@ POTHOS_MODULE_UTIL(
         DynamicRouter.cpp
         Pacer.cpp
         Relabeler.cpp
+        LabelStripper.cpp
         Gateway.cpp
         TestGateway.cpp
         Reinterpret.cpp
