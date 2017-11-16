@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.5.0 (pending)
 ==========================
 
+- Removed deprecated use of popBuffer in favor of popElements
 - Added label stripper block to remove labels in a stream
 - Replaced use of callVoid() and callProxy() with 0.6 call API
 - Removed UDT protocol support from network source/sink blocks

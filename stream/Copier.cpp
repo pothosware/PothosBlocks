@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -56,7 +56,7 @@ public:
 
         //produce/consume
         inputPort->consume(outBuff.length);
-        outputPort->popBuffer(outBuff.length);
+        outputPort->popElements(outBuff.length);
         outputPort->postBuffer(outBuff);
     }
 };

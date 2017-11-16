@@ -89,7 +89,7 @@ void NetworkSource::work(void)
     if (type == PothosPacketTypeBuffer)
     {
         buffer.dtype = _lastDtype;
-        outputPort->popBuffer(buffer.length);
+        outputPort->popElements(buffer.length);
         outputPort->postBuffer(buffer);
     }
     else if (type == PothosPacketTypeMessage)
@@ -109,7 +109,7 @@ void NetworkSource::work(void)
     {
         //since this is not PothosPacketTypeBuffer, recv may have allocated a new buffer
         //only pop if this is really the buffer from the output port
-        if (buffer.address == outputPort->buffer().address) outputPort->popBuffer(buffer.length);
+        if (buffer.address == outputPort->buffer().address) outputPort->popElements(buffer.length);
 
         buffer.dtype = _lastDtype;
         _packetHeader.payload = buffer;
