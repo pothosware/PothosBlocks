@@ -73,7 +73,7 @@ public:
             auto label = *inputPort->labels().begin();
             inputPort->removeLabel(label);
             label.index += inputPort->totalElements(); //rel -> abs
-            _labels.push_back(label);
+            _labels.push_back(std::move(label));
         }
 
         //store messages
@@ -87,9 +87,9 @@ public:
                 //copy the payload so we don't hold upstream resources
                 pkt.payload = Pothos::BufferChunk(oldBuff.dtype, oldBuff.elements());
                 std::memcpy(pkt.payload.as<void *>(), oldBuff.as<const void *>(), oldBuff.length);
-                _packets.push_back(pkt);
+                _packets.push_back(std::move(pkt));
             }
-            else _messages.push_back(msg);
+            else _messages.push_back(std::move(msg));
         }
     }
 

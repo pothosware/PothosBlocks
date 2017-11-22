@@ -73,8 +73,8 @@ public:
 
         while (inPort->hasMessage())
         {
-            const auto msg = inPort->popMessage();
-            outPort->postMessage(msg);
+            auto msg = inPort->popMessage();
+            outPort->postMessage(std::move(msg));
         }
 
         //we can only forward as many elements from primate as we have labels
@@ -82,13 +82,13 @@ public:
         if (N == 0) return;
 
         //grab the primary buffer and set the length
-        auto buff = inPort->buffer();
+        auto buff = inPort->takeBuffer();
         buff.length = N*buff.dtype.size();
 
         //consume and forward buffer
         inPort->consume(N*inPort->buffer().dtype.size());
         _lblPort->consume(N*_lblPort->buffer().dtype.size());
-        outPort->postBuffer(buff);
+        outPort->postBuffer(std::move(buff));
     }
 
     void propagateLabels(const Pothos::InputPort *port)

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -101,32 +101,33 @@ public:
         //forward non-packet messages
         if (msg.type() != typeid(Pothos::Packet))
         {
-            outputPort->postMessage(msg);
+            outputPort->postMessage(std::move(msg));
             return;
         }
         const auto &packet = msg.extract<Pothos::Packet>();
+        const auto &buff = packet.payload;
 
         //post output labels
-        for (auto label : packet.labels)
+        for (const auto &label : packet.labels)
         {
             outputPort->postLabel(label.toAdjusted(
-                packet.payload.dtype.size(), 1)); //elements to bytes
+                buff.dtype.size(), 1)); //elements to bytes
         }
 
         //post start of frame label
         if (not _frameStartId.empty())
         {
-            outputPort->postLabel(Pothos::Label(_frameStartId, packet.payload.elements(), 0, packet.payload.dtype.size()));
+            outputPort->postLabel(_frameStartId, buff.elements(), 0, buff.dtype.size());
         }
 
         //post end of frame label
         if (not _frameEndId.empty())
         {
-            outputPort->postLabel(Pothos::Label(_frameEndId, packet.payload.elements(), packet.payload.length-1, packet.payload.dtype.size()));
+            outputPort->postLabel(_frameEndId, buff.elements(), buff.length-1, buff.dtype.size());
         }
 
         //post the payload
-        outputPort->postBuffer(packet.payload);
+        outputPort->postBuffer(buff);
     }
 
 private:

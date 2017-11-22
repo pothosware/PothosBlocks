@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -96,23 +96,22 @@ public:
         if (inputPort->hasMessage())
         {
             auto m = inputPort->popMessage();
-            outputPort->postMessage(m);
+            outputPort->postMessage(std::move(m));
             _currentCount++;
         }
 
-        const auto &buffer = inputPort->buffer();
+        auto buffer = inputPort->takeBuffer();
         if (buffer.length != 0)
         {
-            outputPort->postBuffer(buffer);
             inputPort->consume(inputPort->elements());
             _currentCount += buffer.elements();
+            outputPort->postBuffer(std::move(buffer));
         }
 
         if (_sendLabel)
         {
             _sendLabel = false;
-            Pothos::Label label("rxRate", _rate, 0);
-            outputPort->postLabel(label);
+            outputPort->postLabel("rxRate", _rate, 0);
         }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -151,7 +151,7 @@ public:
         while (inputPort->hasMessage())
         {
             auto msg = inputPort->popMessage();
-            outputPort->postMessage(msg);
+            outputPort->postMessage(std::move(msg));
         }
 
         //is there any input buffer available?
@@ -198,7 +198,7 @@ public:
 
         //grab the input buffer
         Pothos::Packet packet;
-        packet.payload = inputPort->buffer();
+        packet.payload = inputPort->takeBuffer();
         if (_mtu != 0)
         {
             const auto elemSize = packet.payload.dtype.size();
@@ -212,7 +212,7 @@ public:
             const auto pktLabel = label.toAdjusted(
                 1, packet.payload.dtype.size()); //bytes to elements
             if (pktLabel.index >= packet.payload.elements()) break;
-            packet.labels.push_back(pktLabel);
+            packet.labels.push_back(std::move(pktLabel));
 
             //end of frame found, truncate payload and leave loop
             if (_fullFrameMode and label.id == _frameEndId)
@@ -225,7 +225,7 @@ public:
 
         //consume the input and produce the packet
         inputPort->consume(packet.payload.length);
-        outputPort->postMessage(packet);
+        outputPort->postMessage(std::move(packet));
     }
 
     /*******************************************************************

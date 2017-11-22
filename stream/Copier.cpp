@@ -39,7 +39,7 @@ public:
         if (inputPort->hasMessage())
         {
             auto m = inputPort->popMessage();
-            outputPort->postMessage(m);
+            outputPort->postMessage(std::move(m));
         }
 
         //get input buffer

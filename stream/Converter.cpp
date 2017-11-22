@@ -50,7 +50,7 @@ public:
             auto pkt = inputPort->popMessage().convert<Pothos::Packet>();
             pkt.payload = pkt.payload.convert(outputPort->dtype());
             //labels reference element indexes and should stay the same
-            outputPort->postMessage(pkt);
+            outputPort->postMessage(std::move(pkt));
         }
 
         //got a stream buffer

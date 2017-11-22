@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2014 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include "SerializeCommon.hpp"
@@ -114,7 +114,7 @@ void Serializer::work(void)
             const size_t hdr_words32 = 4; // a priori
             auto buff = objectToOffsetBuffer(hdr_words32, msg);
             packBuffer(_seqs[i]++, i, false, 0, true, buff);
-            outputPort->postBuffer(buff);
+            outputPort->postBuffer(std::move(buff));
         }
 
         //labels (always handled prior to buffers for ordering reasons)
@@ -123,14 +123,14 @@ void Serializer::work(void)
             auto lbl = *inputPort->labels().begin();
             inputPort->removeLabel(lbl);
             const size_t hdr_words32 = 6; // a priori
-            auto buff = objectToOffsetBuffer(hdr_words32, Pothos::Object(lbl));
             auto index = lbl.index + inputPort->totalElements();
+            auto buff = objectToOffsetBuffer(hdr_words32, Pothos::Object(std::move(lbl)));
             packBuffer(_seqs[i]++, i, true, index, true, buff);
-            outputPort->postBuffer(buff);
+            outputPort->postBuffer(std::move(buff));
         }
 
         //buffers
-        auto buff = inputPort->buffer();
+        auto buff = inputPort->takeBuffer();
         if (buff.length > 0)
         {
             auto hdrTlrBuff = Pothos::BufferChunk(buff.length+HDR_TLR_BYTES);
@@ -144,14 +144,14 @@ void Serializer::work(void)
             outputPort->postBuffer(hdrTlrBuff);
 
             //post the payload
-            outputPort->postBuffer(buff);
+            outputPort->postBuffer(std::move(buff));
             inputPort->consume(buff.length);
 
             //post the trailer
             const size_t pkt_words32 = hdr_words32 + padUp32(buff.length)/4 + 1;
             hdrTlrBuff.address += (pkt_words32 - 1)*4;
             hdrTlrBuff.length = 4;
-            outputPort->postBuffer(hdrTlrBuff);
+            outputPort->postBuffer(std::move(hdrTlrBuff));
         }
     }
 }

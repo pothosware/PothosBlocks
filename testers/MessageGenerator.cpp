@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2016 Josh Blum
+// Copyright (c) 2016-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -127,7 +127,7 @@ public:
         auto outPort = this->output(0);
         if (_type == "OBJECTS")
         {
-            if (strMode) outPort->postMessage(strOut);
+            if (strMode) outPort->postMessage(std::move(strOut));
             else outPort->postMessage(intOut);
         }
         else if (_type == "PACKETS")
@@ -136,8 +136,8 @@ public:
             Pothos::BufferChunk msgBuff(typeid(uint8_t), strOut.size());
             std::memcpy(msgBuff.as<void *>(), strOut.data(), strOut.size());
             Pothos::Packet outPkt;
-            outPkt.payload = msgBuff;
-            outPort->postMessage(outPkt);
+            outPkt.payload = std::move(msgBuff);
+            outPort->postMessage(std::move(outPkt));
         }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -76,18 +76,18 @@ public:
         while (inputPort->hasMessage() and _elementsLeft != 0)
         {
             auto m = inputPort->popMessage();
-            outputPort->postMessage(m);
+            outputPort->postMessage(std::move(m));
             _elementsLeft -= 1;
         }
 
-        auto buffer = inputPort->buffer();
+        auto buffer = inputPort->takeBuffer();
         //input port type unspecified, inspect buffer for actual element count
         const size_t elems = std::min(_elementsLeft, buffer.elements());
         if (elems != 0)
         {
             buffer.length = elems*buffer.dtype.size();
-            outputPort->postBuffer(buffer);
             inputPort->consume(buffer.length);
+            outputPort->postBuffer(std::move(buffer));
             _elementsLeft -= elems;
         }
     }

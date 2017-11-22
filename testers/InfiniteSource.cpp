@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2015 Josh Blum
+// Copyright (c) 2015-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -126,12 +126,7 @@ public:
             outputPort->produce(bytes);
 
             //label production
-            if (_enableLabels)
-            {
-                Pothos::Label label;
-                label.index = 0;
-                outputPort->postLabel(label);
-            }
+            if (_enableLabels) outputPort->postLabel(Pothos::Label());
         }
     }
 

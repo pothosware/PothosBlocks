@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2016 Josh Blum
+// Copyright (c) 2016-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -51,33 +51,32 @@ public:
             pkt.payload.dtype = outputPort->dtype();
             for (auto &label : pkt.labels)
             {
-                label = label.toAdjusted(inType.size(), //multiply to convert input elements to bytes
+                label.adjust(inType.size(), //multiply to convert input elements to bytes
                     outputPort->dtype().size()); //divide to convert bytes to output elements
                 if (label.width == 0) label.width = 1;
             }
-            outputPort->postMessage(pkt);
+            outputPort->postMessage(std::move(pkt));
         }
 
         //got a stream buffer
-        auto buff = inputPort->buffer();
+        auto buff = inputPort->takeBuffer();
         if (buff.length != 0)
         {
+            inputPort->consume(inputPort->elements());
             buff.dtype = outputPort->dtype();
-            outputPort->postBuffer(buff);
+            outputPort->postBuffer(std::move(buff));
         }
-
-        inputPort->consume(inputPort->elements());
     }
 
     void propagateLabels(const Pothos::InputPort *port)
     {
         auto outputPort = this->output(0);
-        for (const auto &label : port->labels())
+        for (auto label : port->labels())
         {
             //retain relative byte offset when converting into output elements
-            auto outLabel = label.toAdjusted(1, outputPort->dtype().size());
-            if (outLabel.width == 0) outLabel.width = 1;
-            outputPort->postLabel(outLabel);
+            label.adjust(1, outputPort->dtype().size());
+            if (label.width == 0) label.width = 1;
+            outputPort->postLabel(std::move(label));
         }
     }
 };

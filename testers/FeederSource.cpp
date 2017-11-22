@@ -67,19 +67,19 @@ public:
         }
         while (not _buffers.empty())
         {
-            outputPort->postBuffer(_buffers.front());
+            outputPort->postBuffer(std::move(_buffers.front()));
             _buffers.pop();
             return;
         }
         while (not _messages.empty())
         {
-            outputPort->postMessage(_messages.front());
+            outputPort->postMessage(std::move(_messages.front()));
             _messages.pop();
             return;
         }
         while (not _packets.empty())
         {
-            outputPort->postMessage(_packets.front());
+            outputPort->postMessage(std::move(_packets.front()));
             _packets.pop();
             return;
         }
@@ -314,7 +314,7 @@ std::string FeederSource::feedTestPlan(const std::string &testPlanStr)
         {
             auto data = random_string(dataSizeDist(gen));
             messages.emplace_back(data);
-            expectedMessages.push_back(data);
+            expectedMessages.push_back(std::move(data));
         }
     }
 

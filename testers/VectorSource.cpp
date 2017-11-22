@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016 Josh Blum
+// Copyright (c) 2015-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -146,8 +146,7 @@ public:
         if (_pending.length == 0)
         {
             _once = true;
-            if (not _endId.empty()) outPort->postLabel(
-                Pothos::Label(_endId, _elems.elements(), numElems-1));
+            if (not _endId.empty()) outPort->postLabel(_endId, _elems.elements(), numElems-1);
         }
     }
 

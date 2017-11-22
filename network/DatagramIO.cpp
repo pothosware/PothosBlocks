@@ -243,9 +243,9 @@ public:
                     if (_packetMode)
                     {
                         Pothos::Packet pkt;
-                        pkt.payload = outBuff;
-                        outPort->popElements(outBuff.elements());
-                        outPort->postMessage(pkt);
+                        pkt.payload = std::move(outBuff);
+                        outPort->popElements(pkt.payload.elements());
+                        outPort->postMessage(std::move(pkt));
                     }
                     else
                     {

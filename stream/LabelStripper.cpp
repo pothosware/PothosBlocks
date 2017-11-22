@@ -36,23 +36,23 @@ public:
 
         while (inPort->hasMessage())
         {
-            const auto msg = inPort->popMessage();
+            auto msg = inPort->popMessage();
             //clear labels for packet types
             if (msg.type() == typeid(Pothos::Packet))
             {
                 auto packet = msg.extract<Pothos::Packet>();
                 packet.labels.clear();
-                outPort->postMessage(packet);
+                outPort->postMessage(std::move(packet));
             }
             //otherwise forward as usual
-            else outPort->postMessage(msg);
+            else outPort->postMessage(std::move(msg));
         }
 
         //forward buffer
-        auto buff = inPort->buffer();
+        auto buff = inPort->takeBuffer();
         if (buff.length == 0) return;
         inPort->consume(inPort->elements());
-        outPort->postBuffer(buff);
+        outPort->postBuffer(std::move(buff));
     }
 
     void propagateLabels(const Pothos::InputPort *)

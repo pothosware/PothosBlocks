@@ -90,20 +90,20 @@ void NetworkSource::work(void)
     {
         buffer.dtype = _lastDtype;
         outputPort->popElements(buffer.length);
-        outputPort->postBuffer(buffer);
+        outputPort->postBuffer(std::move(buffer));
     }
     else if (type == PothosPacketTypeMessage)
     {
         std::istringstream iss(std::string(buffer.as<char *>(), buffer.length));
         Pothos::Object msg;
         msg.deserialize(iss);
-        outputPort->postMessage(msg);
+        outputPort->postMessage(std::move(msg));
     }
     else if (type == PothosPacketTypeHeader)
     {
         std::istringstream iss(std::string(buffer.as<char *>(), buffer.length));
         Pothos::Object msg; msg.deserialize(iss);
-        _packetHeader = msg.extract<Pothos::Packet>(); //store it, payload comes next
+        _packetHeader = std::move(msg.ref<Pothos::Packet>()); //store it, payload comes next
     }
     else if (type == PothosPacketTypePayload)
     {
@@ -113,23 +113,22 @@ void NetworkSource::work(void)
 
         buffer.dtype = _lastDtype;
         _packetHeader.payload = buffer;
-        outputPort->postMessage(_packetHeader);
-        _packetHeader = Pothos::Packet(); //clear local reference
+        outputPort->postMessage(std::move(_packetHeader));
     }
     else if (type == PothosPacketTypeLabel)
     {
         std::istringstream iss(std::string(buffer.as<char *>(), buffer.length));
         Pothos::Object data;
         data.deserialize(iss);
-        auto label = data.extract<Pothos::Label>();
-        outputPort->postLabel(label);
+        auto &label = data.ref<Pothos::Label>();
+        outputPort->postLabel(std::move(label));
     }
     else if (type == PothosPacketTypeDType)
     {
         std::istringstream iss(std::string(buffer.as<char *>(), buffer.length));
         Pothos::Object data;
         data.deserialize(iss);
-        _lastDtype = data.extract<Pothos::DType>();
+        _lastDtype = std::move(data.ref<Pothos::DType>());
     }
 
     return this->yield(); //always yield to service recv() again

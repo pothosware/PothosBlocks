@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include "SerializeCommon.hpp"
@@ -184,7 +184,7 @@ void Deserializer::handlePacket(const Pothos::BufferChunk &packetBuff)
     {
         assert(has_tsf);
         _nextExpectedIndex = tsf + payloadBuff.length;
-        outputPort->postBuffer(payloadBuff);
+        outputPort->postBuffer(std::move(payloadBuff));
     }
 
     else
@@ -196,12 +196,12 @@ void Deserializer::handlePacket(const Pothos::BufferChunk &packetBuff)
         //handle labels
         if (has_tsf)
         {
-            auto lbl = obj.extract<Pothos::Label>();
+            auto &lbl = obj.ref<Pothos::Label>();
             lbl.index = tsf - _nextExpectedIndex;
-            outputPort->postLabel(lbl);
+            outputPort->postLabel(std::move(lbl));
         }
 
         //handle msgs
-        else outputPort->postMessage(obj);
+        else outputPort->postMessage(std::move(obj));
     }
 }
