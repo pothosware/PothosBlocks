@@ -72,7 +72,7 @@ static void packBuffer(const size_t seq, const size_t sid, const bool has_tsf, c
     buff.address -= hdr_words32*4;
     buff.length = pkt_words32*4;
 
-    auto p = buff.as<uint32_t *>();
+    uint32_t *p = buff;
     p[0] = Poco::ByteOrder::toNetwork(mVRL);
     p[1] = Poco::ByteOrder::toNetwork(uint32_t(((seq << 20) & 0xfff) | (pkt_bytes & 0xfffff)));
     p[2] = Poco::ByteOrder::toNetwork(uint32_t(VITA_SID | (is_ext? VITA_EXT : 0) | (has_tsf? VITA_TSF : 0) | ((seq << 16) & 0xf) | (vita_words32 & 0xffff)));

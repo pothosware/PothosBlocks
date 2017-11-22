@@ -140,7 +140,7 @@ private:
     void writeBuffer(const Pothos::BufferChunk &buff)
     {
         const auto outBuff = buff.convert(typeid(Type), buff.dtype.dimension());
-        auto elems = outBuff.as<const Type *>();
+        const Type *elems = outBuff;
         for (size_t i = 0; i < buff.elements(); i++)
         {
             for (size_t j = 0; j < buff.dtype.dimension(); j++)

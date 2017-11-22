@@ -60,8 +60,8 @@ static Pothos::BlockRegistry registerDeserializer(
  */
 static bool inspectPacket(const Pothos::BufferChunk &packet, bool &isFragment, size_t &pkt_bytes)
 {
-    auto vrlp_pkt = packet.as<const uint32_t *>();
-    auto p = packet.as<const char *>();
+    const uint32_t *vrlp_pkt = packet;
+    const char *p = packet;
     if ((p[0] == 'm') and (p[1] == 'V') and (p[2] == 'R') and (p[3] == 'L'))
     {
         assert(Poco::ByteOrder::fromNetwork(vrlp_pkt[0]) == mVRL);
@@ -80,7 +80,7 @@ static bool inspectPacket(const Pothos::BufferChunk &packet, bool &isFragment, s
 static void unpackBuffer(const Pothos::BufferChunk &packet, size_t &seq, size_t &sid, bool &has_tsf, unsigned long long &tsf, bool &is_ext, Pothos::BufferChunk &payloadBuff)
 {
     #define unpackCheck(cond) if (not (cond)) throw Pothos::AssertionViolationException("Deserializer::unpackBuffer()", "failed assertion: " #cond)
-    auto p = packet.as<const uint32_t *>();
+    const uint32_t *p = packet;
 
     //validate vrlp
     assert(Poco::ByteOrder::fromNetwork(p[0]) == mVRL);

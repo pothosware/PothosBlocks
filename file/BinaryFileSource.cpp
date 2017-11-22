@@ -119,7 +119,7 @@ public:
         #endif
 
         auto out0 = this->output(0);
-        auto ptr = out0->buffer().as<void *>();
+        void *ptr = out0->buffer();
         auto r = read(_fd, ptr, out0->buffer().length);
         if (r == 0 and _rewind) lseek(_fd, 0, SEEK_SET);
         if (r >= 0) out0->produce(size_t(r)/out0->dtype().size());

@@ -20,12 +20,12 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_unit_test_blocks)
 
     //feed buffer
     auto b0 = Pothos::BufferChunk(10*sizeof(int));
-    auto p0 = b0.as<int *>();
+    int *p0 = b0;
     for (size_t i = 0; i < 10; i++) p0[i] = i;
     feeder.call("feedBuffer", b0);
 
     auto b1 = Pothos::BufferChunk(10*sizeof(int));
-    auto p1 = b1.as<int *>();
+    int *p1 = b1;
     for (size_t i = 0; i < 10; i++) p1[i] = i+10;
     feeder.call("feedBuffer", b1);
 
@@ -59,7 +59,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_unit_test_blocks)
 
     //check the buffer for equality
     POTHOS_TEST_EQUAL(buff.length, 20*sizeof(int));
-    auto pb = buff.as<const int *>();
+    const int *pb = buff;
     for (int i = 0; i < 20; i++) POTHOS_TEST_EQUAL(pb[i], i);
 
     //check labels

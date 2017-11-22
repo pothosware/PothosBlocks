@@ -105,7 +105,7 @@ public:
         if (!_enabled) in0->consume(in0->elements());
         else
         {
-            auto ptr = in0->buffer().as<const void *>();
+            const void *ptr = in0->buffer();
             auto r = write(_fd, ptr, in0->elements());
             if (r >= 0) in0->consume(size_t(r));
             else
