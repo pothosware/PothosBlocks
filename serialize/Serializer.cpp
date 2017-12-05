@@ -138,17 +138,17 @@ void Serializer::work(void)
             hdrTlrBuff.address += hdr_words32*4;
             hdrTlrBuff.length = buff.length;
             packBuffer(_seqs[i]++, i, true, inputPort->totalElements(), false, hdrTlrBuff);
+            const size_t pkt_words32 = hdr_words32 + padUp32(buff.length)/4 + 1;
 
             //post the header
             hdrTlrBuff.length = hdr_words32*4;
             outputPort->postBuffer(hdrTlrBuff);
 
             //post the payload
-            outputPort->postBuffer(std::move(buff));
             inputPort->consume(buff.length);
+            outputPort->postBuffer(std::move(buff));
 
             //post the trailer
-            const size_t pkt_words32 = hdr_words32 + padUp32(buff.length)/4 + 1;
             hdrTlrBuff.address += (pkt_words32 - 1)*4;
             hdrTlrBuff.length = 4;
             outputPort->postBuffer(std::move(hdrTlrBuff));
