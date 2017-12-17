@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.5.0 (pending)
 ==========================
 
+- Added parameterized receive timeout to DatagramIO block
 - Use resource moves and emplacement with Pothos 0.6 port API
 - Use the implicit buffer cast operator from Pothos 0.6 API
 - Removed deprecated use of popBuffer in favor of popElements

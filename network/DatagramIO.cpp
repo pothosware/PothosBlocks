@@ -70,6 +70,13 @@
  * |default 1472
  * |units bytes
  *
+ * |param recvTimeout[Receive Timeout] The receive timeout in microseconds.
+ * How long to wait in work for an incoming datagram before yielding the context.
+ * |units us
+ * |tab Advanced
+ * |preview disable
+ * |default 10
+ *
  * |param recvBuffSize[Receive Buffer] The size of the receive buffer.
  * Set the size of the receive socket buffer (0 for default).
  * |units bytes
@@ -88,6 +95,7 @@
  * |initializer setupSocket(uri, opt)
  * |setter setMode(mode)
  * |setter setMTU(mtu)
+ * |setter setRecvTimeout(recvTimeout)
  * |setter setBufferSize(recvBuffSize, sendBuffSize)
  **********************************************************************/
 class DatagramIO : public Pothos::Block
@@ -101,6 +109,7 @@ public:
     DatagramIO(const Pothos::DType &dtype):
         _logger(Poco::Logger::get("DatagramIO")),
         _packetMode(false),
+        _timeoutUs(10),
         _mtu(1472)
     {
         this->setupInput(0);
@@ -108,6 +117,7 @@ public:
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setupSocket));
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setMode));
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setMTU));
+        this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setRecvTimeout));
         this->registerCall(this, POTHOS_FCN_TUPLE(DatagramIO, setBufferSize));
     }
 
@@ -149,6 +159,11 @@ public:
 
         outPort->setReserve(_mtu/elemSize);
         _mtu = mtu;
+    }
+
+    void setRecvTimeout(const long timeoutUs)
+    {
+        _timeoutUs = timeoutUs;
     }
 
     void setBufferSize(const size_t recvSize, const size_t sendSize)
@@ -216,7 +231,7 @@ public:
         //small polling sleep if nothing happened and there is nothing to recv
         if (not hadEvent and _sock.available() == 0)
         {
-            const auto pollTimeUs = std::min<Poco::Timespan::TimeDiff>(10, this->workInfo().maxTimeoutNs/1000);
+            const auto pollTimeUs = std::min<Poco::Timespan::TimeDiff>(_timeoutUs, this->workInfo().maxTimeoutNs/1000);
             _sock.poll(Poco::Timespan(pollTimeUs), Poco::Net::Socket::SELECT_READ);
         }
 
@@ -300,6 +315,7 @@ private:
     Poco::Logger &_logger;
     Poco::Net::DatagramSocket _sock;
     bool _packetMode;
+    long _timeoutUs;
     size_t _mtu;
 
     //bound sockets only send to the last received address
