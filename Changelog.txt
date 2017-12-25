@@ -1,6 +1,6 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
-Release 0.5.0 (pending)
+Release 0.5.0 (2017-12-25)
 ==========================
 
 - Added parameterized receive timeout to DatagramIO block
