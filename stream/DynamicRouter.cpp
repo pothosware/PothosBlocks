@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 Josh Blum
+// Copyright (c) 2014-2018 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -47,16 +47,16 @@ public:
 
     DynamicRouter(void)
     {
-        this->setupInput(0, "byte", this->uid()); //unique domain because of buffer forwarding
-        this->setupOutput(0, "byte", this->uid()); //unique domain because of buffer forwarding
+        this->setupInput(0, "", this->uid()); //unique domain because of buffer forwarding
+        this->setupOutput(0, "", this->uid()); //unique domain because of buffer forwarding
         this->registerCall(this, POTHOS_FCN_TUPLE(DynamicRouter, setDestinations));
         this->registerCall(this, POTHOS_FCN_TUPLE(DynamicRouter, setNumPorts));
     }
 
     void setNumPorts(const size_t numInputs, const size_t numOutputs)
     {
-        for (size_t i = this->inputs().size(); i < numInputs; i++) this->setupInput(i, "byte", this->uid());
-        for (size_t i = this->outputs().size(); i < numOutputs; i++) this->setupOutput(i, "byte", this->uid());
+        for (size_t i = this->inputs().size(); i < numInputs; i++) this->setupInput(i, "", this->uid());
+        for (size_t i = this->outputs().size(); i < numOutputs; i++) this->setupOutput(i, "", this->uid());
     }
 
     void setDestinations(const std::vector<int> &destinations)
@@ -69,7 +69,7 @@ public:
         for (auto inputPort : this->inputs())
         {
             auto dest = (size_t(inputPort->index()) < _destinations.size())? _destinations.at(inputPort->index()) : -1;
-            auto outputPort = (dest > 0)? this->output(dest) : nullptr;
+            auto outputPort = (dest >= 0)? this->output(dest) : nullptr;
 
             if (inputPort->hasMessage())
             {

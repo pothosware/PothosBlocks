@@ -1,5 +1,11 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
+Release 0.5.1 (pending)
+==========================
+
+- Fixed dynamic router for output port 0 destinations
+- Dynamic router should support arbitrary buffer types
+
 Release 0.5.0 (2017-12-25)
 ==========================
 
