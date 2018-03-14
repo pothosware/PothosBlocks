@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 Josh Blum
+// Copyright (c) 2014-2018 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -39,7 +39,16 @@ public:
         if (inputPort->hasMessage())
         {
             auto m = inputPort->popMessage();
-            outputPort->postMessage(std::move(m));
+            if (m.type() == typeid(Pothos::Packet))
+            {
+                auto pkt = m.extract<Pothos::Packet>();
+                auto outBuff = outputPort->getBuffer(pkt.payload.length);
+                outBuff.dtype = pkt.payload.dtype;
+                std::memcpy(outBuff.as<void *>(), pkt.payload.as<const void *>(), outBuff.length);
+                pkt.payload = std::move(outBuff);
+                outputPort->postMessage(std::move(pkt));
+            }
+            else outputPort->postMessage(std::move(m));
         }
 
         //get input buffer

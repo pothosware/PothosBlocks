@@ -3,6 +3,7 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.5.1 (pending)
 ==========================
 
+- Added copy packet payload support for Copier block
 - Fixed dynamic router for output port 0 destinations
 - Dynamic router should support arbitrary buffer types
 
