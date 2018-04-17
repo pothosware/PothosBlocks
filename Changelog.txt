@@ -1,6 +1,6 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
-Release 0.5.1 (pending)
+Release 0.5.1 (2018-04-16)
 ==========================
 
 - Added copy packet payload support for Copier block
