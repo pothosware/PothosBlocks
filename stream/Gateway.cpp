@@ -44,7 +44,7 @@ public:
 
     void setMode(const std::string &mode)
     {
-        _mode = _mode;
+        _mode = mode;
         _forwardMode = false;
         _backupMode = false;
         _dropMode = false;
