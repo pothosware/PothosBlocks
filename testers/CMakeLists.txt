@@ -18,6 +18,7 @@ POTHOS_MODULE_UTIL(
         TestProxyTopology.cpp
         TestJSONTopology.cpp
         TestSetThreadPool.cpp
+        TestConstantSource.cpp
         FeederSource.cpp
         CollectorSink.cpp
         BlackHole.cpp
@@ -27,6 +28,7 @@ POTHOS_MODULE_UTIL(
         SporadicLabeler.cpp
         VectorSource.cpp
         MessageGenerator.cpp
+        ConstantSource.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
