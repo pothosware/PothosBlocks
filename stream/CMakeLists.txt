@@ -27,6 +27,8 @@ POTHOS_MODULE_UTIL(
         TestGateway.cpp
         Reinterpret.cpp
         RateMonitor.cpp
+        MinMax.cpp
+        TestMinMax.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
