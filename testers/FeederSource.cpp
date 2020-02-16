@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2017 Josh Blum
+//                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -170,7 +171,7 @@ std::string FeederSource::feedTestPlan(const std::string &testPlanStr)
             testPlan.value("maxBufferSize", maxSize)/elemDType.size());
         const int valueSize = (1 << elemDType.size()*8);
         const int signedOff = elemDType.isSigned()?valueSize/2:0;
-        std::uniform_int_distribution<int> valueDist(
+        std::uniform_real_distribution<float> valueDist(
             testPlan.value("minValue", -signedOff),
             testPlan.value("maxValue", valueSize-signedOff-1));
 
@@ -205,7 +206,11 @@ std::string FeederSource::feedTestPlan(const std::string &testPlanStr)
                 expectedValues.push_back(value);
                 if (elemDType.size() == 1) buff.as<char *>()[i] = char(value);
                 else if (elemDType.size() == 2) buff.as<short *>()[i] = short(value);
-                else if (elemDType.size() == 4) buff.as<int *>()[i] = int(value);
+                else if (elemDType.size() == 4)
+                {
+                    if(elemDType.isFloat()) buff.as<float *>()[i] = value;
+                    else buff.as<int *>()[i] = int(value);
+                }
                 else throw Pothos::AssertionViolationException("FeederSource::feedTestPlan()", "cant handle this dtype: " + elemDType.toString());
             }
 
