@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2017 Josh Blum
+//                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Framework.hpp>
@@ -160,19 +161,38 @@ void CollectorSink::verifyTestPlanExpectedValues(const json &expected, const Pot
         Poco::format("Buffer type mismatch: expected %s -> actual %s", expectedDType.toString(), buffer.dtype.toString()));
 
     const auto expectedValues = expected.value("expectedValues", json::array());
-    auto intBuffer = buffer.convert(typeid(int));
-    auto numActualElems = intBuffer.elements();
-
-    for (size_t i = 0; i < std::min(numActualElems, expectedValues.size()); i++)
+    if(buffer.dtype.isFloat())
     {
-        const int value = expectedValues[i];
-        const auto actual = intBuffer.as<const int *>()[i];
-        if (value != actual) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
-            Poco::format("Value check for element %z: expected %d -> actual %d", i, value, actual));
-    }
+        auto floatBuffer = buffer.convert(typeid(float));
+        auto numActualElems = floatBuffer.elements();
 
-    if (numActualElems != expectedValues.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
-        Poco::format("Check expected %z elements, actual %z elements", expectedValues.size(), numActualElems));
+        for (size_t i = 0; i < std::min(numActualElems, expectedValues.size()); i++)
+        {
+            const float value = expectedValues[i];
+            const auto actual = floatBuffer.as<const float *>()[i];
+            if (value != actual) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+                Poco::format("Value check for element %z: expected %f -> actual %f", i, value, actual));
+        }
+
+        if (numActualElems != expectedValues.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+            Poco::format("Check expected %z elements, actual %z elements", expectedValues.size(), numActualElems));
+    }
+    else
+    {
+        auto intBuffer = buffer.convert(typeid(int));
+        auto numActualElems = intBuffer.elements();
+
+        for (size_t i = 0; i < std::min(numActualElems, expectedValues.size()); i++)
+        {
+            const int value = expectedValues[i];
+            const auto actual = intBuffer.as<const int *>()[i];
+            if (value != actual) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+                Poco::format("Value check for element %z: expected %d -> actual %d", i, value, actual));
+        }
+
+        if (numActualElems != expectedValues.size()) throw Pothos::AssertionViolationException("CollectorSink::verifyTestPlan()",
+            Poco::format("Check expected %z elements, actual %z elements", expectedValues.size(), numActualElems));
+    }
 }
 
 /***********************************************************************
