@@ -29,6 +29,9 @@ POTHOS_MODULE_UTIL(
         RateMonitor.cpp
         MinMax.cpp
         TestMinMax.cpp
+        Interleaver.cpp
+        TestInterleaver.cpp
+        Deinterleaver.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
