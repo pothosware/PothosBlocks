@@ -14,7 +14,8 @@ public:
     SporadicNaN():
         _gen(_rd()),
         _randomProb(0.0, 1.0),
-        _probability(0.0)
+        _probability(0.0),
+        _numNaNs(1)
     {
         using Class = SporadicNaN<T>;
 
@@ -22,11 +23,13 @@ public:
         
         this->setupInput(0, dtype);
         this->setupOutput(0, dtype);
-        this->registerCall(this, POTHOS_FCN_TUPLE(Class, getProbability));
+        this->registerCall(this, POTHOS_FCN_TUPLE(Class, probability));
         this->registerCall(this, POTHOS_FCN_TUPLE(Class, setProbability));
+        this->registerCall(this, POTHOS_FCN_TUPLE(Class, numNaNs));
+        this->registerCall(this, POTHOS_FCN_TUPLE(Class, setNumNaNs));
     }
 
-    double getProbability(void) const
+    double probability() const
     {
         return _probability;
     }
@@ -40,6 +43,16 @@ public:
                 "probability not in [0.0, 1.0]");
         }
         _probability = prob;
+    }
+
+    size_t numNaNs() const
+    {
+        return _numNaNs;
+    }
+
+    void setNumNaNs(size_t numNaNs)
+    {
+        _numNaNs = numNaNs;
     }
 
     void work() override
@@ -63,10 +76,15 @@ public:
         if(insertNaN)
         {
             // Scatter NaNs around the buffer.
-            static constexpr size_t numNaNs = 8;
-            for(size_t i = 0; i < numNaNs; ++i)
+            const auto actualNumNaNs = std::min(_numNaNs, outBuff.elements());
+            for(size_t i = 0; i < actualNumNaNs; ++i)
             {
-                const auto index = static_cast<size_t>(outBuff.elements() * _randomProb(_gen));
+                size_t index = 0;
+                do
+                {
+                    index = static_cast<size_t>(outBuff.elements() * _randomProb(_gen));
+                } while(std::isnan(outBuff.as<T*>()[index]));
+
                 outBuff.as<T*>()[index] = std::numeric_limits<T>::quiet_NaN();
             }
         }
@@ -83,6 +101,7 @@ private:
     std::uniform_real_distribution<double> _randomProb;
 
     double _probability;
+    size_t _numNaNs;
 };
 
 static Pothos::Block* makeSporadicNaN(const Pothos::DType& dtype)
@@ -119,8 +138,13 @@ static Pothos::Block* makeSporadicNaN(const Pothos::DType& dtype)
  * A probability of 1 would mean every buffer, a probability of 0 would mean none.
  * |default 0.001
  *
+ * |param numNaNs How many output elements are set to NaN when applicable.
+ * |widget SpinBox(minimum=1)
+ * |default 1
+ *
  * |factory /blocks/sporadic_nan(dtype)
  * |setter setProbability(probability)
+ * |setter setNumNaNs(numNaNs)
  **********************************************************************/
 static Pothos::BlockRegistry registerSporadicNaN(
     "/blocks/sporadic_nan",
