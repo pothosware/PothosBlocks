@@ -134,13 +134,15 @@ static Pothos::Block* makeSporadicNaN(const Pothos::DType& dtype)
  * |default "float64"
  * |preview disable
  *
- * |param probability The probability of a buffer having NaNs injected.
+ * |param probability[Probability] The probability of a buffer having NaNs injected.
  * A probability of 1 would mean every buffer, a probability of 0 would mean none.
  * |default 0.001
+ * |preview enable
  *
- * |param numNaNs How many output elements are set to NaN when applicable.
+ * |param numNaNs[# NaNs] How many output elements are set to NaN when applicable.
  * |widget SpinBox(minimum=1)
  * |default 1
+ * |preview enable
  *
  * |factory /blocks/sporadic_nan(dtype)
  * |setter setProbability(probability)
