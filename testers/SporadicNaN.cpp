@@ -3,6 +3,7 @@
 
 #include <Pothos/Framework.hpp>
 
+#include <cstring>
 #include <limits>
 #include <random>
 
@@ -20,7 +21,7 @@ public:
         static const Pothos::DType dtype(typeid(T));
         
         this->setupInput(0, dtype);
-        this->setupOutput(0, dtype, this->uid()); // Unique domain because of buffer forwarding
+        this->setupOutput(0, dtype);
         this->registerCall(this, POTHOS_FCN_TUPLE(Class, getProbability));
         this->registerCall(this, POTHOS_FCN_TUPLE(Class, setProbability));
     }
@@ -43,32 +44,37 @@ public:
 
     void work() override
     {
-        if(0 == this->workInfo().minInElements)
-        {
-            return;
-        }
-
         auto inputPort = this->input(0);
         auto outputPort = this->output(0);
 
+        const auto inBuff = inputPort->buffer();
+        auto outBuff = outputPort->buffer();
+        if((0 == inBuff.length) || (0 == outBuff.length)) return;
+        
+        outBuff.length = std::min(inBuff.elements(), outBuff.elements()) * outBuff.dtype.size();
+
+        std::memcpy(
+            outBuff.as<void*>(),
+            inBuff.as<const void*>(),
+            outBuff.length);
+
         // Calculate if a NaN will be injected.
         const bool insertNaN = (_randomProb(_gen) <= _probability);
-
-        const auto &buffer = inputPort->takeBuffer();
-        inputPort->consume(inputPort->elements());
-
         if(insertNaN)
         {
             // Scatter NaNs around the buffer.
             static constexpr size_t numNaNs = 8;
             for(size_t i = 0; i < numNaNs; ++i)
             {
-                const auto index = static_cast<size_t>(buffer.elements() * _randomProb(_gen));
-                buffer.as<T*>()[index] = std::numeric_limits<T>::quiet_NaN();
+                const auto index = static_cast<size_t>(outBuff.elements() * _randomProb(_gen));
+                outBuff.as<T*>()[index] = std::numeric_limits<T>::quiet_NaN();
             }
         }
 
-        outputPort->postBuffer(std::move(buffer));
+        // Consume/produce
+        inputPort->consume(inBuff.elements());
+        outputPort->popElements(outBuff.elements());
+        outputPort->postBuffer(outBuff);
     }
 
 private:
