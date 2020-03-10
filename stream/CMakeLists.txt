@@ -32,6 +32,8 @@ POTHOS_MODULE_UTIL(
         Interleaver.cpp
         TestInterleaver.cpp
         Deinterleaver.cpp
+        Clamp.cpp
+        TestClamp.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
