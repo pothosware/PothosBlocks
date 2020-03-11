@@ -36,6 +36,8 @@ POTHOS_MODULE_UTIL(
         TestClamp.cpp
         Repeat.cpp
         TestRepeat.cpp
+        IsX.cpp
+        TestIsX.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
