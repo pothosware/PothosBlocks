@@ -30,6 +30,7 @@ POTHOS_MODULE_UTIL(
         VectorSource.cpp
         MessageGenerator.cpp
         ConstantSource.cpp
+        Abort.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
