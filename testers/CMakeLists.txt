@@ -26,7 +26,7 @@ POTHOS_MODULE_UTIL(
         InfiniteSource.cpp
         SporadicDropper.cpp
         SporadicLabeler.cpp
-        SporadicNaN.cpp
+        SporadicSubnormal.cpp
         VectorSource.cpp
         MessageGenerator.cpp
         ConstantSource.cpp

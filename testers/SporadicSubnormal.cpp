@@ -8,16 +8,21 @@
 #include <random>
 
 template <typename T>
-class SporadicNaN: public Pothos::Block
+using CheckFcn = bool(*)(T);
+
+template <typename T>
+class SporadicSubnormal: public Pothos::Block
 {
 public:
-    SporadicNaN():
+    SporadicSubnormal(T subVal, CheckFcn<T> checkFcn, const std::string& subName):
         _gen(_rd()),
         _randomProb(0.0, 1.0),
+        _subVal(subVal),
+        _checkFcn(checkFcn),
         _probability(0.0),
-        _numNaNs(1)
+        _numSubs(1)
     {
-        using Class = SporadicNaN<T>;
+        using Class = SporadicSubnormal<T>;
 
         static const Pothos::DType dtype(typeid(T));
         
@@ -25,8 +30,17 @@ public:
         this->setupOutput(0, dtype);
         this->registerCall(this, POTHOS_FCN_TUPLE(Class, probability));
         this->registerCall(this, POTHOS_FCN_TUPLE(Class, setProbability));
-        this->registerCall(this, POTHOS_FCN_TUPLE(Class, numNaNs));
-        this->registerCall(this, POTHOS_FCN_TUPLE(Class, setNumNaNs));
+
+        // Generate the getter/setter function names to expose.
+
+        std::string getterFcn = "num" + subName + "s";
+        getterFcn[3] = ::toupper(getterFcn[3]);
+
+        std::string setterFcn = "set" + getterFcn;
+        setterFcn[3] = ::toupper(setterFcn[3]);
+
+        this->registerCall(this, getterFcn, &Class::numSubs);
+        this->registerCall(this, setterFcn, &Class::setNumSubs);
     }
 
     double probability() const
@@ -39,20 +53,20 @@ public:
         if((prob < 0.0) || (prob > 1.0))
         {
             throw Pothos::RangeException(
-                "SporadicNaN::setProbability("+std::to_string(prob)+")",
+                "setProbability("+std::to_string(prob)+")",
                 "probability not in [0.0, 1.0]");
         }
         _probability = prob;
     }
 
-    size_t numNaNs() const
+    size_t numSubs() const
     {
-        return _numNaNs;
+        return _numSubs;
     }
 
-    void setNumNaNs(size_t numNaNs)
+    void setNumSubs(size_t numSubs)
     {
-        _numNaNs = numNaNs;
+        _numSubs = numSubs;
     }
 
     void work() override
@@ -76,16 +90,16 @@ public:
         if(insertNaN)
         {
             // Scatter NaNs around the buffer.
-            const auto actualNumNaNs = std::min(_numNaNs, outBuff.elements());
-            for(size_t i = 0; i < actualNumNaNs; ++i)
+            const auto actualNumSubs = std::min(_numSubs, outBuff.elements());
+            for(size_t i = 0; i < actualNumSubs; ++i)
             {
                 size_t index = 0;
                 do
                 {
                     index = static_cast<size_t>(outBuff.elements() * _randomProb(_gen));
-                } while(std::isnan(outBuff.as<T*>()[index]));
+                } while(_checkFcn(outBuff.as<T*>()[index]));
 
-                outBuff.as<T*>()[index] = std::numeric_limits<T>::quiet_NaN();
+                outBuff.as<T*>()[index] = _subVal;
             }
         }
 
@@ -100,23 +114,48 @@ private:
     std::mt19937 _gen;
     std::uniform_real_distribution<double> _randomProb;
 
+    T _subVal;
+    CheckFcn<T> _checkFcn;
+
     double _probability;
-    size_t _numNaNs;
+    size_t _numSubs;
 };
+
+//
+// Factory functions
+//
 
 static Pothos::Block* makeSporadicNaN(const Pothos::DType& dtype)
 {
-    #define ifTypeDeclareFactory(T) \
+    #define ifTypeDeclareIsNaN(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
-            return new SporadicNaN<T>();
+            return new SporadicSubnormal<T>(std::numeric_limits<T>::quiet_NaN(), CheckFcn<T>(std::isnan), "NaN");
 
-    ifTypeDeclareFactory(float)
-    ifTypeDeclareFactory(double)
+    ifTypeDeclareIsNaN(float)
+    ifTypeDeclareIsNaN(double)
 
     throw Pothos::InvalidArgumentException(
         "SporadicNaN: unsupported type",
         dtype.name());
 }
+
+static Pothos::Block* makeSporadicInf(const Pothos::DType& dtype)
+{
+    #define ifTypeDeclareIsInf(T) \
+        if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
+            return new SporadicSubnormal<T>(std::numeric_limits<T>::infinity(), CheckFcn<T>(std::isinf), "Inf");
+
+    ifTypeDeclareIsInf(float)
+    ifTypeDeclareIsInf(double)
+
+    throw Pothos::InvalidArgumentException(
+        "SporadicInf: unsupported type",
+        dtype.name());
+}
+
+//
+// Registrations
+//
 
 /***********************************************************************
  * |PothosDoc Sporadic NaN
@@ -151,3 +190,37 @@ static Pothos::Block* makeSporadicNaN(const Pothos::DType& dtype)
 static Pothos::BlockRegistry registerSporadicNaN(
     "/blocks/sporadic_nan",
     &makeSporadicNaN);
+
+/***********************************************************************
+ * |PothosDoc Sporadic Infinities
+ *
+ * This block passively forwards all data from input port 0 to output
+ * port 0 while randomly replacing individual elements with infinity. This
+ * block is mainly used for robustness testing.
+ *
+ * |category /Testers
+ * |category /Random
+ * |keywords random
+ *
+ * |param dtype[Data Type] The block data type.
+ * |widget DTypeChooser(float=1)
+ * |default "float64"
+ * |preview disable
+ *
+ * |param probability[Probability] The probability of a buffer having infinity injected.
+ * A probability of 1 would mean every buffer, a probability of 0 would mean none.
+ * |default 0.001
+ * |preview enable
+ *
+ * |param numInfs[# Infinities] How many output elements are set to infinity when applicable.
+ * |widget SpinBox(minimum=1)
+ * |default 1
+ * |preview enable
+ *
+ * |factory /blocks/sporadic_inf(dtype)
+ * |setter setProbability(probability)
+ * |setter setNumInfs(numInfs)
+ **********************************************************************/
+static Pothos::BlockRegistry registerSporadicInf(
+    "/blocks/sporadic_inf",
+    &makeSporadicInf);
