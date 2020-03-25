@@ -20,7 +20,7 @@
  * |preview disable
  *
  * |param repeatCount[Repeat Count] How many times to repeat each element.
- * |widget SpinBox(default=1)
+ * |widget SpinBox(minimum=1)
  * |default 1
  * |preview enable
  *
@@ -35,7 +35,7 @@ public:
     {
         return new Repeat(dtype, repeatCount);
     }
-    
+
     Repeat(const Pothos::DType& dtype, size_t repeatCount):
         Pothos::Block(),
         _dtypeSize(dtype.size()),
@@ -43,6 +43,7 @@ public:
     {
         this->setupInput(0, dtype);
         this->setupOutput(0, dtype);
+        this->output(0)->setReserve(_repeatCount);
 
         this->registerCall(this, POTHOS_FCN_TUPLE(Repeat, repeatCount));
         this->registerCall(this, POTHOS_FCN_TUPLE(Repeat, setRepeatCount));
@@ -56,12 +57,13 @@ public:
     void setRepeatCount(size_t newRepeatCount)
     {
         _repeatCount = newRepeatCount;
+        this->output(0)->setReserve(_repeatCount);
     }
 
     void work() override
     {
-        const auto elemsIn = this->workInfo().minInElements;
-        if(0 == elemsIn)
+        const auto elems = this->workInfo().minElements;
+        if(0 == elems)
         {
             return;
         }
@@ -69,12 +71,13 @@ public:
         auto input = this->input(0);
         auto output = this->output(0);
 
-        Pothos::BufferChunk outputChunk(output->dtype(), elemsIn*_repeatCount);
-
         const std::uint8_t* buffIn = input->buffer();
-        std::uint8_t* buffOut = outputChunk;
-        
-        for(size_t elem = 0; elem < elemsIn; ++elem)
+        std::uint8_t* buffOut = output->buffer();
+
+        const auto elemsToRepeat = std::min(input->elements(), output->elements() / _repeatCount);
+        const auto elemsOut = elemsToRepeat * _repeatCount;
+
+        for(size_t elem = 0; elem < elemsToRepeat; ++elem)
         {
             for(size_t repeatNum = 0; repeatNum < _repeatCount; ++repeatNum)
             {
@@ -85,8 +88,8 @@ public:
             buffIn += _dtypeSize;
         }
 
-        input->consume(elemsIn);
-        output->postBuffer(std::move(outputChunk));
+        input->consume(elemsToRepeat);
+        output->produce(elemsOut);
     }
 
 private:
