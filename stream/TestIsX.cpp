@@ -117,14 +117,14 @@ static void testIsX()
         &isNormalOutputs,
         &isNegativeOutputs);
 
-    testBlock<T>("/comms/isfinite", inputs, isFiniteOutputs);
-    testBlock<T>("/comms/isinf", inputs, isInfOutputs);
-    testBlock<T>("/comms/isnan", inputs, isNaNOutputs);
-    testBlock<T>("/comms/isnormal", inputs, isNormalOutputs);
-    testBlock<T>("/comms/isnegative", inputs, isNegativeOutputs);
+    testBlock<T>("/blocks/isfinite", inputs, isFiniteOutputs);
+    testBlock<T>("/blocks/isinf", inputs, isInfOutputs);
+    testBlock<T>("/blocks/isnan", inputs, isNaNOutputs);
+    testBlock<T>("/blocks/isnormal", inputs, isNormalOutputs);
+    testBlock<T>("/blocks/isnegative", inputs, isNegativeOutputs);
 }
 
-POTHOS_TEST_BLOCK("/comms/tests", test_is_x)
+POTHOS_TEST_BLOCK("/blocks/tests", test_is_x)
 {
     testIsX<float>();
     testIsX<double>();

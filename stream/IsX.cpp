@@ -90,7 +90,7 @@ private:
     } \
  \
     static Pothos::BlockRegistry register ## func( \
-        "/comms/" #blockName, \
+        "/blocks/" #blockName, \
         Pothos::Callable(&make ## func));
 
 /***********************************************************************
@@ -107,7 +107,7 @@ private:
  * |default "float64"
  * |preview disable
  *
- * |factory /comms/isfinite(dtype)
+ * |factory /blocks/isfinite(dtype)
  **********************************************************************/
 registerBlock(isfinite, IsFinite)
 
@@ -124,7 +124,7 @@ registerBlock(isfinite, IsFinite)
  * |default "float64"
  * |preview disable
  *
- * |factory /comms/isinf(dtype)
+ * |factory /blocks/isinf(dtype)
  **********************************************************************/
 registerBlock(isinf, IsInf)
 
@@ -141,7 +141,7 @@ registerBlock(isinf, IsInf)
  * |default "float64"
  * |preview disable
  *
- * |factory /comms/isnan(dtype)
+ * |factory /blocks/isnan(dtype)
  **********************************************************************/
 registerBlock(isnan, IsNaN)
 
@@ -159,7 +159,7 @@ registerBlock(isnan, IsNaN)
  * |default "float64"
  * |preview disable
  *
- * |factory /comms/isnormal(dtype)
+ * |factory /blocks/isnormal(dtype)
  **********************************************************************/
 registerBlock(isnormal, IsNormal)
 
@@ -176,6 +176,6 @@ registerBlock(isnormal, IsNormal)
  * |default "float64"
  * |preview disable
  *
- * |factory /comms/isnegative(dtype)
+ * |factory /blocks/isnegative(dtype)
  **********************************************************************/
 registerBlock(isnegative, IsNegative)
