@@ -3,8 +3,6 @@
 
 #include <Pothos/Framework.hpp>
 
-#include <cstring>
-
 /***********************************************************************
  * |PothosDoc Mute
  *
@@ -36,10 +34,10 @@ public:
 
     Mute(const Pothos::DType& dtype):
         Pothos::Block(),
-        _dtypeSize(dtype.size())
+        _dtype(dtype)
     {
-        this->setupInput(0, dtype);
-        this->setupOutput(0, dtype);
+        this->setupInput(0, _dtype);
+        this->setupOutput(0, _dtype, this->uid()); // Unique domain because of buffer forwarding
 
         this->registerCall(this, POTHOS_FCN_TUPLE(Mute, mute));
         this->registerCall(this, POTHOS_FCN_TUPLE(Mute, setMute));
@@ -67,23 +65,28 @@ public:
             return;
         }
 
-        const auto elemsBytes = elems * _dtypeSize;
+        auto inputPort = this->input(0);
+        auto outputPort = this->output(0);
+        Pothos::BufferChunk output;
 
-        auto input = this->input(0);
-        auto output = this->output(0);
+        if(_mute) output = Pothos::BufferChunk(_dtype, elems);
+        else
+        {
+            while(inputPort->hasMessage())
+            {
+                auto message = inputPort->popMessage();
+                outputPort->postMessage(std::move(message));
+            }
 
-        const void* buffIn = input->buffer();
-        void* buffOut = output->buffer();
+            output = inputPort->takeBuffer();
+        }
 
-        if(_mute) std::memset(buffOut, 0, elemsBytes);
-        else std::memcpy(buffOut, buffIn, elemsBytes);
-
-        input->consume(elems);
-        output->produce(elems);
+        inputPort->consume(inputPort->elements());
+        outputPort->postBuffer(std::move(output));
     }
 
 private:
-    size_t _dtypeSize;
+    Pothos::DType _dtype;
     bool _mute;
 };
 
