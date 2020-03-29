@@ -3,6 +3,8 @@
 
 #include <Pothos/Framework.hpp>
 
+#include <cstring>
+
 /***********************************************************************
  * |PothosDoc Mute
  *
@@ -69,7 +71,11 @@ public:
         auto outputPort = this->output(0);
         Pothos::BufferChunk output;
 
-        if(_mute) output = Pothos::BufferChunk(_dtype, elems);
+        if(_mute)
+        {
+            output = Pothos::BufferChunk(_dtype, elems);
+            std::memset(output.as<void*>(), 0, output.length);
+        }
         else
         {
             while(inputPort->hasMessage())
