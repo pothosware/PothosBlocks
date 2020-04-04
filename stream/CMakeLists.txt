@@ -32,6 +32,13 @@ POTHOS_MODULE_UTIL(
         Interleaver.cpp
         TestInterleaver.cpp
         Deinterleaver.cpp
+        Clamp.cpp
+        TestClamp.cpp
+        Repeat.cpp
+        TestRepeat.cpp
+        IsX.cpp
+        TestIsX.cpp
+        Mute.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
