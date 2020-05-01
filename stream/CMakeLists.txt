@@ -39,6 +39,9 @@ POTHOS_MODULE_UTIL(
         IsX.cpp
         TestIsX.cpp
         Mute.cpp
+        Multiplexer.cpp
+        Select.cpp
+        TestMuxBlocks.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
