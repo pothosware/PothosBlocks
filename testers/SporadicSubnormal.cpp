@@ -81,8 +81,8 @@ public:
         outBuff.length = std::min(inBuff.elements(), outBuff.elements()) * outBuff.dtype.size();
 
         std::memcpy(
-            outBuff.as<void*>(),
-            inBuff.as<const void*>(),
+            outBuff.template as<void*>(),
+            inBuff.template as<const void*>(),
             outBuff.length);
 
         // Calculate if a NaN will be injected.
@@ -97,9 +97,9 @@ public:
                 do
                 {
                     index = static_cast<size_t>(outBuff.elements() * _randomProb(_gen));
-                } while(_checkFcn(outBuff.as<T*>()[index]));
+                } while(_checkFcn(outBuff.template as<T*>()[index]));
 
-                outBuff.as<T*>()[index] = _subVal;
+                outBuff.template as<T*>()[index] = _subVal;
             }
         }
 
