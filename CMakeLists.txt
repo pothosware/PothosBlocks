@@ -28,6 +28,14 @@ if (NOT JSON_HPP_INCLUDE_DIR)
 endif (NOT JSON_HPP_INCLUDE_DIR)
 
 ########################################################################
+# xsimd
+########################################################################
+find_package(xsimd)
+if(xsimd_FOUND)
+    add_definitions(-DPOTHOS_XSIMD)
+endif()
+
+########################################################################
 # Build subdirectories
 ########################################################################
 add_subdirectory(file)

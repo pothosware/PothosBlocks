@@ -4,15 +4,70 @@
 #include <Pothos/Callable.hpp>
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
+#include <Pothos/Util/Templates.hpp>
 
 #include <Poco/Format.h>
 #include <Poco/NumberFormatter.h>
 
 #include <algorithm>
 #include <limits>
+#include <type_traits>
+
+#ifdef POTHOS_XSIMD
+
+#include <xsimd/xsimd.hpp>
 
 template <typename T>
-static void arrayClamp(const T* in, T* out, const T& lo, const T& hi, size_t num)
+static Pothos::Util::disable_if_same<T, std::uint32_t> arrayClamp(
+    const T* in,
+    T* out,
+    const T& lo,
+    const T& hi,
+    size_t num)
+{
+    static constexpr size_t simdSize = xsimd::simd_traits<T>::size;
+    const auto numSIMDFrames = num / simdSize;
+
+    auto loReg = xsimd::set_simd(lo);
+    auto hiReg = xsimd::set_simd(hi);
+
+    const T* inPtr = in;
+    T* outPtr = out;
+
+    for(size_t i = 0; i < numSIMDFrames; ++i)
+    {
+        auto inReg = xsimd::load_unaligned(inPtr);
+        auto outReg = xsimd::clip(inReg, loReg, hiReg);
+        outReg.store_unaligned(outPtr);
+
+        inPtr += simdSize;
+        outPtr += simdSize;
+    }
+
+    // Perform remaining operations manually.
+    for(size_t i = (simdSize * numSIMDFrames); i < num; ++i)
+    {
+#if __cplusplus >= 201703L
+        out[i] = std::clamp(in[i], lo, hi);
+#else
+        // See: https://en.cppreference.com/w/cpp/algorithm/clamp
+        out[i] = (in[i] < lo) ? lo : (hi < in[i]) ? hi : in[i];
+#endif
+    }
+}
+
+// Don't use this SIMD optization for std::uint32_t due to an unknown bug in XSIMD.
+template <typename T>
+static typename std::enable_if<std::is_same<T, std::uint32_t>::value, void>::type arrayClamp(
+#else
+template <typename T>
+static void arrayClamp(
+#endif
+    const T* in,
+    T* out,
+    const T& lo,
+    const T& hi,
+    size_t num)
 {
     for(size_t elem = 0; elem < num; ++elem)
     {

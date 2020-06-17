@@ -10,6 +10,12 @@ endif()
 ########################################################################
 # Stream blocks module
 ########################################################################
+set(libraries "")
+
+if(xsimd_FOUND)
+    list(APPEND libraries xsimd)
+endif()
+
 include_directories(${JSON_HPP_INCLUDE_DIR})
 POTHOS_MODULE_UTIL(
     TARGET StreamBlocks
@@ -39,6 +45,11 @@ POTHOS_MODULE_UTIL(
         IsX.cpp
         TestIsX.cpp
         Mute.cpp
+    LIBRARIES ${libraries}
     DESTINATION blocks
     ENABLE_DOCS
 )
+
+if(xsimd_FOUND)
+    set_target_properties(StreamBlocks PROPERTIES COMPILE_FLAGS -march=native)
+endif()
