@@ -11,6 +11,20 @@
 #include <algorithm>
 #include <limits>
 
+template <typename T>
+static void arrayClamp(const T* in, T* out, const T& lo, const T& hi, size_t num)
+{
+    for(size_t elem = 0; elem < num; ++elem)
+    {
+#if __cplusplus >= 201703L
+        out[elem] = std::clamp(in[elem], lo, hi);
+#else
+        // See: https://en.cppreference.com/w/cpp/algorithm/clamp
+        out[elem] = (in[elem] < lo) ? lo : (hi < in[elem]) ? hi : in[elem];
+#endif
+    }
+}
+
 /***********************************************************************
  * |PothosDoc Clamp
  *
@@ -101,7 +115,7 @@ public:
     void setMin(const T& newMin)
     {
         validateMinMax(newMin, _max);
-        
+
         _min = newMin;
         this->emitSignal("minChanged", _min);
     }
@@ -114,7 +128,7 @@ public:
     void setMax(const T& newMax)
     {
         validateMinMax(_min, newMax);
-        
+
         _max = newMax;
         this->emitSignal("maxChanged", _max);
     }
@@ -166,18 +180,10 @@ public:
 
         const T* buffIn = input->buffer();
         T* buffOut = output->buffer();
-        for(size_t elem = 0; elem < elems; ++elem)
-        {
-            const T lo = _clampMin ? _min : std::numeric_limits<T>::min();
-            const T hi = _clampMax ? _max : std::numeric_limits<T>::max();
 
-#if __cplusplus >= 201703L
-            buffOut[elem] = std::clamp(buffIn[elem], lo, hi);
-#else
-            // See: https://en.cppreference.com/w/cpp/algorithm/clamp
-            buffOut[elem] = (buffIn[elem] < lo) ? lo : (hi < buffIn[elem]) ? hi : buffIn[elem];
-#endif
-        }
+        const T lo = _clampMin ? _min : std::numeric_limits<T>::min();
+        const T hi = _clampMax ? _max : std::numeric_limits<T>::max();
+        arrayClamp(buffIn, buffOut, lo, hi, elems);
 
         input->consume(elems);
         output->produce(elems);
