@@ -11,65 +11,56 @@
 // Wrappers that return the stream's output type
 //
 
-template <typename T>
-using IsXFcn = std::int8_t(*)(T);
-
-#define ISX_WRAPPER(funcName, stdFuncName) \
+#define IS_X_ARRAY_FCN(NAME,FUNC) \
     template <typename T> \
-    static std::int8_t funcName(T input) \
+    static void NAME(const T* in, std::int8_t* out, size_t num) \
     { \
-        return std::stdFuncName(input) ? 1 : 0; \
+        for(size_t i = 0; i < num; ++i) \
+        { \
+            out[i] = FUNC(in[i]) ? 1 : 0; \
+        } \
     }
 
-ISX_WRAPPER(IsFinite,   isfinite)
-ISX_WRAPPER(IsInf,      isinf)
-ISX_WRAPPER(IsNaN,      isnan)
-ISX_WRAPPER(IsNormal,   isnormal)
-ISX_WRAPPER(IsNegative, signbit)
+IS_X_ARRAY_FCN(IsFinite,   std::isfinite)
+IS_X_ARRAY_FCN(IsInf,      std::isinf)
+IS_X_ARRAY_FCN(IsNaN,      std::isnan)
+IS_X_ARRAY_FCN(IsNormal,   std::isnormal)
+IS_X_ARRAY_FCN(IsNegative, std::signbit)
 
 //
 // Block implementation
 //
 
-template <typename T>
+template <typename T, void (*Fcn)(const T*, std::int8_t*, size_t)>
 class IsX: public Pothos::Block
 {
-public:
-    using Class = IsX<T>;
-    using Func = IsXFcn<T>;
+    public:
+        using Class = IsX<T,Fcn>;
 
-    IsX(Func func, size_t dimension):
-        _func(func)
-    {
-        this->setupInput(0, Pothos::DType(typeid(T), dimension));
-        this->setupOutput(0, Pothos::DType("int8", dimension));
-    }
-
-    void work() override
-    {
-        const auto elems = this->workInfo().minElements;
-        if(0 == elems)
+        IsX(size_t dimension): Pothos::Block()
         {
-            return;
+            this->setupInput(0, Pothos::DType(typeid(T), dimension));
+            this->setupOutput(0, Pothos::DType("int8", dimension));
         }
 
-        auto* input = this->input(0);
-        auto* output = this->output(0);
-
-        const T* inBuff = input->buffer();
-        std::int8_t* outBuff = output->buffer();
-
-        for(size_t elem = 0; elem < elems; ++elem)
+        void work() override
         {
-            outBuff[elem] = _func(inBuff[elem]);
+            const auto elems = this->workInfo().minElements;
+            if(0 == elems)
+            {
+                return;
+            }
+
+            auto* input = this->input(0);
+            auto* output = this->output(0);
+
+            const T* inBuff = input->buffer();
+            std::int8_t* outBuff = output->buffer();
+            Fcn(inBuff, outBuff, elems);
+
+            input->consume(elems);
+            output->produce(elems);
         }
-
-        input->consume(elems);
-        output->produce(elems);
-    }
-
-private:
-    Func _func;
 };
 
 //
@@ -80,9 +71,9 @@ private:
     static Pothos::Block* make ## func (const Pothos::DType& dtype) \
     { \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(float))) \
-            return new IsX<float>(&func<float>, dtype.dimension()); \
+            return new IsX<float, func<float>>(dtype.dimension()); \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(double))) \
-            return new IsX<double>(&func<double>, dtype.dimension()); \
+            return new IsX<double, func<double>>(dtype.dimension()); \
  \
         throw Pothos::InvalidArgumentException( \
                   std::string(__FUNCTION__)+": invalid type", \
