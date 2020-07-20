@@ -3,7 +3,21 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.5.2 (pending)
 ==========================
 
+New blocks:
+
+- Added constant source
+- Added min/max
+- Added stream de/interleaver
+- Added sporadic float subnormals
+- Added abort tester block
+- Added clamp
+- Added repeat
+- Added mute
+
+Fixes:
+
 - Fixed setMode() in gateway block
+- Fixed tester binary cast for floats
 
 Release 0.5.1 (2018-04-16)
 ==========================
