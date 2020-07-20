@@ -17,11 +17,11 @@ Package: pothos-modules-blocks
 Section: libs
 Architecture: all
 Pre-Depends: ${misc:Pre-Depends}
-Depends: pothos0.6-modules-blocks, ${misc:Depends}
+Depends: pothos0.7-modules-blocks, ${misc:Depends}
 Description: core processing blocks - metapackage
  The Pothos data-flow software suite.
 
-Package: pothos0.6-modules-blocks
+Package: pothos0.7-modules-blocks
 Section: libs
 Architecture: any
 Multi-Arch: same
