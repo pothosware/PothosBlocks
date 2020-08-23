@@ -106,7 +106,7 @@ static void testRepeat()
                       "/blocks/repeat",
                       dtype,
                       repeatCount);
-    POTHOS_TEST_EQUAL(repeatCount, repeat.call("repeatCount"));
+    POTHOS_TEST_EQUAL(repeatCount, repeat.call<size_t>("repeatCount"));
 
     auto collectorSink = Pothos::BlockRegistry::make(
                              "/blocks/collector_sink",

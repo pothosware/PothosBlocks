@@ -1,5 +1,11 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
+Release 0.5.3 (pending)
+==========================
+
+- Fix Abort block for OSX - no quick_exit
+- Fix Test Repeat for OSX template deduction
+
 Release 0.5.2 (2020-07-19)
 ==========================
 

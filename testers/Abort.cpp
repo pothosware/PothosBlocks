@@ -13,7 +13,11 @@
 
 // So we can use the same function pointer for each function.
 using AbortFcn = void(*)(void);
+#ifdef __APPLE__
+static const auto codelessQuickExit = [](){std::exit(1);};
+#else
 static const auto codelessQuickExit = [](){std::quick_exit(1);};
+#endif
 
 /***********************************************************************
  * |PothosDoc Abort
