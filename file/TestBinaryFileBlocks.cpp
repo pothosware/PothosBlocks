@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2017 Josh Blum
+//                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
 #include <Pothos/Testing.hpp>
@@ -10,20 +11,12 @@
 
 using json = nlohmann::json;
 
-POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
+static void testBinaryFileBlocks(
+    const Pothos::Proxy& fileSource,
+    const Pothos::Proxy& fileSink)
 {
     auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
-
-    auto tempFile = Poco::TemporaryFile();
-    std::cout << "tempFile " << tempFile.path() << std::endl;
-    POTHOS_TEST_TRUE(tempFile.createFile());
-
-    auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
-    fileSource.call("setFilePath", tempFile.path());
-
-    auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
-    fileSink.call("setFilePath", tempFile.path());
 
     //create a test plan
     json testPlan;
@@ -51,4 +44,19 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     }
 
     collector.call("verifyTestPlan", expected);
+}
+
+POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
+{
+    auto tempFile = Poco::TemporaryFile();
+    std::cout << "tempFile " << tempFile.path() << std::endl;
+    POTHOS_TEST_TRUE(tempFile.createFile());
+
+    auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
+    fileSource.call("setFilePath", tempFile.path());
+
+    auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
+    fileSink.call("setFilePath", tempFile.path());
+
+    testBinaryFileBlocks(fileSource, fileSink);
 }
