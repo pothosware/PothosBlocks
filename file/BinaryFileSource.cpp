@@ -1,22 +1,10 @@
 // Copyright (c) 2014-2016 Josh Blum
+//                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "FileDescriptor.hpp"
+
 #include <Pothos/Framework.hpp>
-
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef _MSC_VER
-#include <io.h>
-#else
-#include <unistd.h>
-#endif //_MSC_VER
-#include <stdio.h>
-#include <cerrno>
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
 #include <Poco/Logger.h>
 
@@ -86,7 +74,7 @@ public:
     void activate(void)
     {
         if (_path.empty()) throw Pothos::FileException("BinaryFileSource", "empty file path");
-        _fd = open(_path.c_str(), O_RDONLY | O_BINARY);
+        _fd = openSourceFD(_path.c_str()); 
         if (_fd < 0)
         {
             poco_error_f4(Poco::Logger::get("BinaryFileSource"), "open(%s) returned %d -- %s(%d)", _path, _fd, std::string(strerror(errno)), errno);
