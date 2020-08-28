@@ -19,7 +19,6 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     auto tempFile = Poco::TemporaryFile();
-    std::cout << "tempFile " << tempFile.path() << std::endl;
     POTHOS_TEST_TRUE(tempFile.createFile());
 
     auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
@@ -56,21 +55,14 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     collector.call("verifyTestPlan", expected);
 }
 
+// TODO: test file descriptors not from files. How to do this in Windows?
 POTHOS_TEST_BLOCK("/blocks/tests", test_file_descriptor_blocks)
 {
     auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
 
     auto tempFile = Poco::TemporaryFile();
-    std::cout << "tempFile " << tempFile.path() << std::endl;
     POTHOS_TEST_TRUE(tempFile.createFile());
-
-    auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
-    fileSource.call("setFilePath", tempFile.path());
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
     int fd = openSinkFD(tempFile.path().c_str());
     auto fileSink = Pothos::BlockRegistry::make("/blocks/file_descriptor_sink", fd);
@@ -91,6 +83,9 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_file_descriptor_blocks)
         topology.commit();
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
+
+    fd = openSourceFD(tempFile.path().c_str());
+    auto fileSource = Pothos::BlockRegistry::make("/blocks/file_descriptor_source", fd);
 
     //run a topology that sends file to collector
     {
