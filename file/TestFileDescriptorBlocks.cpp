@@ -28,7 +28,7 @@ using json = nlohmann::json;
 
 static inline int testSocketPair(int fd[2])
 {
-    return socketpair(AF_UNIX, SOCK_RAW | SOCK_CLOEXEC, 0, fd);
+    return socketpair(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, fd);
 }
 
 #else
@@ -117,13 +117,6 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_file_descriptor_blocks_with_sockets)
     {
         Pothos::Topology topology;
         topology.connect(feeder, 0, fileSink, 0);
-        topology.commit();
-        POTHOS_TEST_TRUE(topology.waitInactive());
-    }
-
-    //run a topology that sends file to collector
-    {
-        Pothos::Topology topology;
         topology.connect(fileSource, 0, collector, 0);
         topology.commit();
         POTHOS_TEST_TRUE(topology.waitInactive());

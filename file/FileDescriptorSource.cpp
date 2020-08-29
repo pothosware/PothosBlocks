@@ -62,7 +62,7 @@ public:
         void* ptr = out0->buffer();
         auto r = read(_fd, ptr, out0->buffer().length);
 
-        if(r >= 0) out0->produce(size_t(r)/out0->dtype().size());
+        if(r >= 0) out0->produce(size_t(r));
         else throw Pothos::Util::ErrnoException<Pothos::ReadFileException>();
     }
 
