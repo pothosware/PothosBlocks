@@ -7,8 +7,6 @@
 #include <Pothos/Framework.hpp>
 #include <Pothos/Util/ExceptionForErrorCode.hpp>
 
-#include <Poco/Logger.h>
-
 //
 // Test classes
 //
@@ -46,6 +44,20 @@ public:
         else
         {
             const void *ptr = in0->buffer();
+            // setup timeval for timeout
+            timeval tv;
+            tv.tv_sec = 0;
+            tv.tv_usec = this->workInfo().maxTimeoutNs/1000; //ns->us
+
+            // setup wset for timeout
+            fd_set wset;
+            FD_ZERO(&wset);
+            FD_SET(_fd, &wset);
+
+            // call select with timeout
+            // TODO: process winapi errors
+            if(::select(_fd+1, NULL, &wset, NULL, &tv) <= 0) return this->yield();
+
             auto r = write(_fd, ptr, in0->elements());
 
             if(r >= 0) in0->consume(size_t(r));

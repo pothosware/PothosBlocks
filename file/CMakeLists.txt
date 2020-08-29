@@ -19,6 +19,7 @@ POTHOS_MODULE_UTIL(
         FileDescriptorSource.cpp
         TextFileSink.cpp
         TestBinaryFileBlocks.cpp
+        TestFileDescriptorBlocks.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
