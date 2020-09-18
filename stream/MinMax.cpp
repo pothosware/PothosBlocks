@@ -8,6 +8,34 @@
 #include <algorithm>
 #include <limits>
 
+//
+// Implementation getters to be called on class construction
+//
+
+template <typename T>
+using MinMaxFcn = void(*)(const T**, T*, T*, size_t, size_t);
+
+template <typename T>
+static inline MinMaxFcn<T> getMinMaxFcn()
+{
+    return [](const T** in, T* minOut, T* maxOut, size_t numInputs, size_t num)
+    {
+        for (size_t elem = 0; elem < num; ++elem)
+        {
+            auto minMaxIters = std::minmax_element(
+                                    in,
+                                    in + numInputs,
+                                    [elem](const T* in0, const T* in1)
+                                    {
+                                        return (in0[elem] < in1[elem]);
+                                    });
+
+            minOut[elem] = (*minMaxIters.first)[elem];
+            maxOut[elem] = (*minMaxIters.second)[elem];
+        }
+    };
+}
+
 /***********************************************************************
  * |PothosDoc MinMax
  *
@@ -38,6 +66,7 @@ public:
 
     MinMax(size_t dimension, size_t numInputs):
         Pothos::Block(),
+        _fcn(getMinMaxFcn<T>()),
         _numInputs(numInputs)
     {
         const Pothos::DType dtype(typeid(T), dimension);
@@ -53,7 +82,9 @@ public:
 
     void work() override
     {
-        auto elems = this->workInfo().minAllElements;
+        const auto& workInfo = this->workInfo();
+
+        auto elems = workInfo.minAllElements;
         if(0 == elems)
         {
             return;
@@ -66,23 +97,11 @@ public:
         T* outputMinBuf = outputMin->buffer();
         T* outputMaxBuf = outputMax->buffer();
 
-        for(size_t elem = 0; elem < elems; ++elem)
-        {
-            std::vector<T> indexElems;
-            std::transform(
-                inputs.begin(),
-                inputs.end(),
-                std::back_inserter(indexElems),
-                [&elem](Pothos::InputPort* inputPort)
-                {
-                    return inputPort->buffer().as<const T*>()[elem];
-                });
-            
-            auto minMaxIters = std::minmax_element(indexElems.begin(), indexElems.end());
-
-            outputMinBuf[elem] = *minMaxIters.first;
-            outputMaxBuf[elem] = *minMaxIters.second;
-        }
+        _fcn((const T**)workInfo.inputPointers.data(),
+             outputMinBuf,
+             outputMaxBuf,
+             _numInputs,
+             elems);
 
         for(auto* input: inputs) input->consume(elems);
         outputMin->produce(elems);
@@ -90,6 +109,7 @@ public:
     }
 
 private:
+    MinMaxFcn<T> _fcn;
     size_t _numInputs;
 };
 
