@@ -11,18 +11,28 @@
 #include <algorithm>
 #include <limits>
 
+//
+// Implementation getters to be called on class construction
+//
+
 template <typename T>
-static void arrayClamp(const T* in, T* out, const T& lo, const T& hi, size_t num)
+using ClampFcn = void(*)(const T*, T*, const T&, const T&, size_t);
+
+template <typename T>
+static inline ClampFcn<T> getClampFcn()
 {
-    for(size_t elem = 0; elem < num; ++elem)
+    return [](const T* in, T* out, const T& lo, const T& hi, size_t num)
     {
+        for (size_t elem = 0; elem < num; ++elem)
+        {
 #if __cplusplus >= 201703L
-        out[elem] = std::clamp(in[elem], lo, hi);
+            out[elem] = std::clamp(in[elem], lo, hi);
 #else
-        // See: https://en.cppreference.com/w/cpp/algorithm/clamp
-        out[elem] = (in[elem] < lo) ? lo : (hi < in[elem]) ? hi : in[elem];
+            // See: https://en.cppreference.com/w/cpp/algorithm/clamp
+            out[elem] = (in[elem] < lo) ? lo : (hi < in[elem]) ? hi : in[elem];
 #endif
-    }
+        }
+    };
 }
 
 /***********************************************************************
@@ -74,6 +84,7 @@ public:
 
     Clamp(size_t dimension):
         Pothos::Block(),
+        _fcn(getClampFcn<T>()),
         _min(0),
         _max(0),
         _clampMin(true),
@@ -183,13 +194,15 @@ public:
 
         const T lo = _clampMin ? _min : std::numeric_limits<T>::min();
         const T hi = _clampMax ? _max : std::numeric_limits<T>::max();
-        arrayClamp(buffIn, buffOut, lo, hi, elems);
+        _fcn(buffIn, buffOut, lo, hi, elems);
 
         input->consume(elems);
         output->produce(elems);
     }
 
 private:
+    ClampFcn<T> _fcn;
+
     T _min;
     T _max;
 
