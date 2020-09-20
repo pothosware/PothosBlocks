@@ -39,6 +39,8 @@ POTHOS_MODULE_UTIL(
         IsX.cpp
         TestIsX.cpp
         Mute.cpp
+        Round.cpp
+        TestRoundBlocks.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )
