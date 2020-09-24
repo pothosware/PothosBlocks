@@ -108,9 +108,9 @@ class IsX: public Pothos::Block
     static Pothos::Block* make ## func (const Pothos::DType& dtype) \
     { \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(float))) \
-            return new IsX<float>(dtype.dimension(), get ## func ## <float>()); \
+            return new IsX<float>(dtype.dimension(), get ## func <float>()); \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(double))) \
-            return new IsX<double>(dtype.dimension(), get ## func ## <double>()); \
+            return new IsX<double>(dtype.dimension(), get ## func <double>()); \
  \
         throw Pothos::InvalidArgumentException( \
                   std::string(__FUNCTION__)+": invalid type", \
