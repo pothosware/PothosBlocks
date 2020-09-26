@@ -1,24 +1,16 @@
 // Copyright (c) 2014-2016 Josh Blum
+//                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "MemoryMappedBufferManager.hpp"
+
+#include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef _MSC_VER
-#include <io.h>
-#else
-#include <unistd.h>
-#endif //_MSC_VER
-#include <stdio.h>
-#include <cerrno>
+#include <Poco/File.h>
+#include <Poco/Mutex.h>
 
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
-#include <Poco/Logger.h>
+#include <memory>
 
 /***********************************************************************
  * |PothosDoc Binary File Source
@@ -53,86 +45,97 @@
 class BinaryFileSource : public Pothos::Block
 {
 public:
-    static Block *make(const Pothos::DType &dtype)
+    static Block *make(const Pothos::DType& dtype)
     {
         return new BinaryFileSource(dtype);
     }
 
-    BinaryFileSource(const Pothos::DType &dtype):
-        _fd(-1),
-        _rewind(false)
+    BinaryFileSource(const Pothos::DType& dtype):
+        _rewind(false),
+        _mmapManagerMutex()
     {
         this->setupOutput(0, dtype);
+
         this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSource, setFilePath));
         this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSource, setAutoRewind));
     }
 
     void setFilePath(const std::string &path)
     {
-        _path = path;
-        //file was open -> close old fd, and open this new path
-        if (_fd != -1)
+        if(!Poco::File(path).exists())
         {
-            this->deactivate();
-            this->activate();
+            throw Pothos::FileNotFoundException(path);
         }
+
+        _path = path;
+        this->deactivate();
+        this->activate();
     }
 
     void setAutoRewind(const bool rewind)
     {
         _rewind = rewind;
+
+        // Since the file is remaining the same, preserve our position.
+        const auto offset = _mmapBufferManager->offset();
+
+        this->deactivate();
+        this->activate();
+
+        _mmapBufferManager->setOffset(offset);
     }
 
-    void activate(void)
+    Pothos::BufferManager::Sptr getOutputBufferManager(
+        const std::string& /*name*/,
+        const std::string& domain)
     {
-        if (_path.empty()) throw Pothos::FileException("BinaryFileSource", "empty file path");
-        _fd = open(_path.c_str(), O_RDONLY | O_BINARY);
-        if (_fd < 0)
+        if(!_mmapBufferManager) throw Pothos::AssertionViolationException("BufferManager is null");
+        if(!domain.empty()) throw Pothos::PortDomainError(domain);
+
+        return _mmapBufferManager;
+    }
+
+    void activate(void) override
+    {
+        Poco::FastMutex::ScopedLock lock(_mmapManagerMutex);
+
+        MemoryMappedBufferManagerArgs args =
         {
-            poco_error_f4(Poco::Logger::get("BinaryFileSource"), "open(%s) returned %d -- %s(%d)", _path, _fd, std::string(strerror(errno)), errno);
-        }
+            _path,
+            true /*readable*/,
+            false /*writeable*/,
+            _rewind
+        };
+
+        _mmapBufferManager.reset(new MemoryMappedBufferManager(args));
     }
 
-    void deactivate(void)
+    void deactivate(void) override
     {
-        close(_fd);
-        _fd = -1;
+        Poco::FastMutex::ScopedLock lock(_mmapManagerMutex);
+
+        _mmapBufferManager.reset();
     }
 
-    void work(void)
+    void work(void) override
     {
-        #ifdef _MSC_VER
-        //TODO use windows API to have timeout
-        #else
-        //setup timeval for timeout
-        timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = this->workInfo().maxTimeoutNs/1000; //ns->us
+        const auto elems = this->workInfo().minElements;
+        if(0 == elems) return;
 
-        //setup rset for timeout
-        fd_set rset;
-        FD_ZERO(&rset);
-        FD_SET(_fd, &rset);
+        Poco::FastMutex::ScopedLock lock(_mmapManagerMutex);
 
-        //call select with timeout
-        if (::select(_fd+1, &rset, NULL, NULL, &tv) <= 0) return this->yield();
-        #endif
-
-        auto out0 = this->output(0);
-        void *ptr = out0->buffer();
-        auto r = read(_fd, ptr, out0->buffer().length);
-        if (r == 0 and _rewind) lseek(_fd, 0, SEEK_SET);
-        if (r >= 0) out0->produce(size_t(r)/out0->dtype().size());
-        else
-        {
-            poco_error_f3(Poco::Logger::get("BinaryFileSource"), "read() returned %d -- %s(%d)", int(r), std::string(strerror(errno)), errno);
-        }
+        // Since our buffer manager provides a buffer with the contents of the mmap'd
+        // file, all we need to do is call produce().
+        this->output(0)->produce(elems);
     }
 
 private:
-    int _fd;
     std::string _path;
     bool _rewind;
+
+    Poco::FastMutex _mmapManagerMutex;
+
+    std::shared_ptr<MemoryMappedBufferManager> _mmapBufferManager;
 };
 
 static Pothos::BlockRegistry registerBinaryFileSource(
