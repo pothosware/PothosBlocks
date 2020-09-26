@@ -76,12 +76,14 @@ public:
             return;
         }
 
+        const auto N = elems * output0->dtype().dimension();
+
         // This resizes our cache if necessary.
         this->_updateCache(elems);
         std::memcpy(
             output0->buffer(),
             _cache.data(),
-            (elems * sizeof(T)));
+            (N * sizeof(T)));
 
         output0->produce(elems);
     }

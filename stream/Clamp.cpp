@@ -183,7 +183,7 @@ public:
 
         const T lo = _clampMin ? _min : std::numeric_limits<T>::min();
         const T hi = _clampMax ? _max : std::numeric_limits<T>::max();
-        arrayClamp(buffIn, buffOut, lo, hi, elems);
+        arrayClamp(buffIn, buffOut, lo, hi, elems*input->dtype().dimension());
 
         input->consume(elems);
         output->produce(elems);
