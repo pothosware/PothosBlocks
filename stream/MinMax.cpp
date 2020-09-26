@@ -97,11 +97,13 @@ public:
         T* outputMinBuf = outputMin->buffer();
         T* outputMaxBuf = outputMax->buffer();
 
+        const auto N = elems * inputs[0]->dtype().dimension();
+
         _fcn((const T**)workInfo.inputPointers.data(),
              outputMinBuf,
              outputMaxBuf,
              _numInputs,
-             elems);
+             N);
 
         for(auto* input: inputs) input->consume(elems);
         outputMin->produce(elems);

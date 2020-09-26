@@ -90,7 +90,7 @@ class IsX: public Pothos::Block
 
             const T* inBuff = input->buffer();
             std::int8_t* outBuff = output->buffer();
-            _fcn(inBuff, outBuff, elems);
+            _fcn(inBuff, outBuff, elems*input->dtype().dimension());
 
             input->consume(elems);
             output->produce(elems);
