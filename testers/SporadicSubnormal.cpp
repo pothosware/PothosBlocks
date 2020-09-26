@@ -11,6 +11,18 @@ template <typename T>
 using CheckFcn = bool(*)(T);
 
 template <typename T>
+bool isNan(const T &x)
+{
+    return std::isnan(x);
+}
+
+template <typename T>
+bool isInf(const T &x)
+{
+    return std::isinf(x);
+}
+
+template <typename T>
 class SporadicSubnormal: public Pothos::Block
 {
 public:
@@ -129,7 +141,7 @@ static Pothos::Block* makeSporadicNaN(const Pothos::DType& dtype)
 {
     #define ifTypeDeclareIsNaN(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
-            return new SporadicSubnormal<T>(std::numeric_limits<T>::quiet_NaN(), CheckFcn<T>(std::isnan), "NaN");
+            return new SporadicSubnormal<T>(std::numeric_limits<T>::quiet_NaN(), CheckFcn<T>(isNan<T>), "NaN");
 
     ifTypeDeclareIsNaN(float)
     ifTypeDeclareIsNaN(double)
@@ -143,7 +155,7 @@ static Pothos::Block* makeSporadicInf(const Pothos::DType& dtype)
 {
     #define ifTypeDeclareIsInf(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
-            return new SporadicSubnormal<T>(std::numeric_limits<T>::infinity(), CheckFcn<T>(std::isinf), "Inf");
+            return new SporadicSubnormal<T>(std::numeric_limits<T>::infinity(), CheckFcn<T>(isInf<T>), "Inf");
 
     ifTypeDeclareIsInf(float)
     ifTypeDeclareIsInf(double)
