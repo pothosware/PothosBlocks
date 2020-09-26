@@ -66,7 +66,9 @@ public:
         T* outputMinBuf = outputMin->buffer();
         T* outputMaxBuf = outputMax->buffer();
 
-        for(size_t elem = 0; elem < elems; ++elem)
+        const auto N = elems * inputs[0]->dtype().dimension();
+
+        for(size_t elem = 0; elem < N; ++elem)
         {
             std::vector<T> indexElems;
             std::transform(
