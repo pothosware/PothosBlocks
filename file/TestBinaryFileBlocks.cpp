@@ -13,9 +13,11 @@
 #include <Poco/TemporaryFile.h>
 #include <Poco/Thread.h>
 
+#include <iostream>
+
 using json = nlohmann::json;
 
-POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
+static void testBinaryFileBlocks(bool optimizeSourceForStandardFile)
 {
     auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
@@ -23,7 +25,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     auto tempFile = Poco::TemporaryFile();
     POTHOS_TEST_TRUE(tempFile.createFile());
 
-    auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
+    auto fileSource = Pothos::BlockRegistry::make(
+                          "/blocks/binary_file_source",
+                          "int",
+                          optimizeSourceForStandardFile);
     fileSource.call("setFilePath", tempFile.path());
 
     auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
@@ -57,6 +62,15 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
     collector.call("verifyTestPlan", expected);
 }
 
+POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
+{
+    std::cout << "Testing with standard file optimization..." << std::endl;
+    testBinaryFileBlocks(true);
+
+    std::cout << "Testing without standard file optimization..." << std::endl;
+    testBinaryFileBlocks(false);
+}
+
 POTHOS_TEST_BLOCK("/blocks/tests", test_circular_binary_file_source)
 {
     // Generate some random input.
@@ -78,7 +92,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_circular_binary_file_source)
     auto tempFile = Poco::TemporaryFile();
     POTHOS_TEST_TRUE(tempFile.createFile());
 
-    auto fileSource = Pothos::BlockRegistry::make("/blocks/binary_file_source", "int");
+    auto fileSource = Pothos::BlockRegistry::make(
+                          "/blocks/binary_file_source",
+                          "int",
+                          true /*optimizeForStandardFile*/);
     fileSource.call("setFilePath", tempFile.path());
     fileSource.call("setAutoRewind", true);
 

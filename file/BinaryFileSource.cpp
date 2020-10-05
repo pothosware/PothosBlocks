@@ -6,11 +6,57 @@
 
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
+#include <Pothos/Util/ExceptionForErrorCode.hpp>
 
 #include <Poco/File.h>
+#include <Poco/Format.h>
+#include <Poco/Logger.h>
 #include <Poco/Mutex.h>
+#include <Poco/Platform.h>
 
 #include <memory>
+
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#if defined(POCO_OS_FAMILY_UNIX)
+#include <unistd.h>
+#else
+#include <io.h>
+#endif
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
+//
+// Utility code
+//
+
+static Poco::Logger& getLogger()
+{
+    static auto& logger = Poco::Logger::get("BinaryFileSource");
+    return logger;
+}
+
+template <typename ExcType = Pothos::RuntimeException>
+static inline void throwErrnoOnFailure(int code)
+{
+    if (code < 0) throw Pothos::Util::ErrnoException<ExcType>(code);
+}
+
+static void logErrnoOnFailure(int code, const char* context)
+{
+    if (code < 0)
+    {
+        poco_error_f2(
+            getLogger(),
+            "%s: %s",
+            std::string(context),
+            std::string(::strerror(errno)));
+    }
+}
 
 /***********************************************************************
  * |PothosDoc Binary File Source
@@ -30,39 +76,46 @@
  * |default ""
  * |widget FileEntry(mode=open)
  *
+ * |param optimizeForStandardFile[Optimize for Standard File?]
+ * When enabled, uses a faster implementation to read file contents. Set this
+ * parameter to true when reading from a normal file. Set this parameter to false
+ * when reading from a file whose descriptor reads from a device.
+ * |default false
+ * |option [Disabled] false
+ * |option [Enabled] true
+ * |preview disable
+ *
  * |param rewind[Auto Rewind] Enable automatic file rewind.
  * When rewind is enabled, the binary file source will stream from the beginning
- * of the file after the end of file is reached.
+ * of the file after the end of file is reached. This option is only valid when
+ * optimizing for standard files.
  * |default false
  * |option [Disabled] false
  * |option [Enabled] true
  * |preview valid
  *
- * |factory /blocks/binary_file_source(dtype)
+ * |factory /blocks/binary_file_source(dtype,optimizeForStandardFile)
  * |setter setFilePath(path)
  * |setter setAutoRewind(rewind)
  **********************************************************************/
-class BinaryFileSource : public Pothos::Block
+class BinaryFileSourceBase : public Pothos::Block
 {
 public:
-    static Block *make(const Pothos::DType& dtype)
-    {
-        return new BinaryFileSource(dtype);
-    }
-
-    BinaryFileSource(const Pothos::DType& dtype):
-        _rewind(false),
-        _mmapManagerMutex()
+    BinaryFileSourceBase(const Pothos::DType& dtype):
+        _path(),
+        _fileResourceMutex()
     {
         this->setupOutput(0, dtype);
 
-        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSource, setFilePath));
-        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSource, setAutoRewind));
+        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSourceBase, setFilePath));
+        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSourceBase, setAutoRewind));
     }
 
-    void setFilePath(const std::string &path)
+    virtual ~BinaryFileSourceBase() = default;
+
+    void setFilePath(const std::string& path)
     {
-        if(!Poco::File(path).exists())
+        if (!Poco::File(path).exists())
         {
             throw Pothos::FileNotFoundException(path);
         }
@@ -71,6 +124,111 @@ public:
         this->deactivate();
         this->activate();
     }
+
+    virtual void setAutoRewind(const bool rewind)
+    {
+        throw Pothos::AssertionViolationException();
+    }
+
+    // Make sure we only expose classes that implement these.
+    virtual void activate() = 0;
+    virtual void deactivate() = 0;
+    virtual void work() = 0;
+
+protected:
+    std::string _path;
+
+    Poco::FastMutex _fileResourceMutex;
+};
+
+class BinaryFileSource : public BinaryFileSourceBase
+{
+public:
+    static Block* make(const Pothos::DType& dtype)
+    {
+        return new BinaryFileSource(dtype);
+    }
+
+    BinaryFileSource(const Pothos::DType& dtype) :
+        BinaryFileSourceBase(dtype),
+        _fd(-1)
+    {
+    }
+
+    void setAutoRewind(const bool) override
+    {
+        throw Pothos::NotImplementedException("You must set optimizeForStandardFile to true to enable auto-rewind.");
+    }
+
+    void activate() override
+    {
+        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
+
+        _fd = open(_path.c_str(), O_RDONLY | O_BINARY);
+        if (_fd < 0) throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
+    }
+
+    void deactivate() override
+    {
+        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
+
+        if (_fd != -1)
+        {
+            logErrnoOnFailure(::close(_fd), "close");
+            _fd = -1;
+        }
+    }
+
+    void work() override
+    {
+        const auto elems = this->workInfo().minElements;
+        if (0 == elems) return;
+
+        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
+
+#if defined(POCO_OS_FAMILY_UNIX)
+        //setup timeval for timeout
+        timeval tv;
+        tv.tv_sec = 0;
+        tv.tv_usec = this->workInfo().maxTimeoutNs / 1000; //ns->us
+
+        //setup rset for timeout
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(_fd, &rset);
+
+        //call select with timeout
+        if (::select(_fd + 1, &rset, NULL, NULL, &tv) <= 0) return this->yield();
+#endif
+
+        auto output = this->output(0);
+        auto outBuffer = output->buffer();
+
+        auto r = ::read(_fd, outBuffer, (unsigned int)(outBuffer.length));
+
+        if (read >= 0) output->produce(r / outBuffer.dtype.size());
+        else           throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
+    }
+
+private:
+    int _fd;
+};
+
+class BinaryFileMMapSource : public BinaryFileSourceBase
+{
+public:
+    static Block *make(const Pothos::DType& dtype)
+    {
+        return new BinaryFileMMapSource(dtype);
+    }
+
+    BinaryFileMMapSource(const Pothos::DType& dtype):
+        BinaryFileSourceBase(dtype),
+        _rewind(false)
+    {
+    }
+
+    virtual ~BinaryFileMMapSource() = default;
 
     void setAutoRewind(const bool rewind)
     {
@@ -97,7 +255,7 @@ public:
 
     void activate(void) override
     {
-        Poco::FastMutex::ScopedLock lock(_mmapManagerMutex);
+        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
         MemoryMappedBufferManagerArgs args =
         {
@@ -112,7 +270,7 @@ public:
 
     void deactivate(void) override
     {
-        Poco::FastMutex::ScopedLock lock(_mmapManagerMutex);
+        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
         _mmapBufferManager.reset();
     }
@@ -122,7 +280,7 @@ public:
         const auto elems = this->workInfo().minElements;
         if(0 == elems) return;
 
-        Poco::FastMutex::ScopedLock lock(_mmapManagerMutex);
+        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
         // Since our buffer manager provides a buffer with the contents of the mmap'd
         // file, all we need to do is call produce().
@@ -130,13 +288,22 @@ public:
     }
 
 private:
-    std::string _path;
     bool _rewind;
-
-    Poco::FastMutex _mmapManagerMutex;
 
     std::shared_ptr<MemoryMappedBufferManager> _mmapBufferManager;
 };
 
+//
+// Factory+registration
+//
+
+static Pothos::Block* makeBinaryFileSource(
+    const Pothos::DType& dtype,
+    bool optimizeForStandardFile)
+{
+    return optimizeForStandardFile ? BinaryFileMMapSource::make(dtype) : BinaryFileSource::make(dtype);
+}
+
 static Pothos::BlockRegistry registerBinaryFileSource(
-    "/blocks/binary_file_source", &BinaryFileSource::make);
+    "/blocks/binary_file_source",
+    &makeBinaryFileSource);
