@@ -125,7 +125,7 @@ public:
         this->activate();
     }
 
-    virtual void setAutoRewind(const bool rewind)
+    virtual void setAutoRewind(const bool)
     {
         throw Pothos::AssertionViolationException();
     }
@@ -155,9 +155,9 @@ public:
     {
     }
 
-    void setAutoRewind(const bool) override
+    void setAutoRewind(const bool rewind) override
     {
-        throw Pothos::NotImplementedException("You must set optimizeForStandardFile to true to enable auto-rewind.");
+        if(rewind) throw Pothos::NotImplementedException("You must set optimizeForStandardFile to true to enable auto-rewind.");
     }
 
     void activate() override
@@ -206,8 +206,8 @@ public:
 
         auto r = ::read(_fd, outBuffer, (unsigned int)(outBuffer.length));
 
-        if (read >= 0) output->produce(r / outBuffer.dtype.size());
-        else           throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
+        if (r >= 0) output->produce(r / outBuffer.dtype.size());
+        else        throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
     }
 
 private:
