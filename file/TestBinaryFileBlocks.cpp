@@ -96,7 +96,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_circular_binary_file_source)
                           "/blocks/binary_file_source",
                           "int",
                           true /*optimizeForStandardFile*/);
-    fileSource.call("setFilePath", tempFile.path());
+    //fileSource.call("setFilePath", tempFile.path());
     fileSource.call("setAutoRewind", true);
 
     auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");

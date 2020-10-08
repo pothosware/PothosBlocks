@@ -80,18 +80,16 @@ static void logErrnoOnFailure(int code, const char* context)
  * When enabled, uses a faster implementation to read file contents. Set this
  * parameter to true when reading from a normal file. Set this parameter to false
  * when reading from a file whose descriptor reads from a device.
+ * |widget ToggleSwitch(on="True",off="False")
  * |default false
- * |option [Disabled] false
- * |option [Enabled] true
  * |preview disable
  *
  * |param rewind[Auto Rewind] Enable automatic file rewind.
  * When rewind is enabled, the binary file source will stream from the beginning
  * of the file after the end of file is reached. This option is only valid when
  * optimizing for standard files.
+ * |widget ToggleSwitch(on="True",off="False")
  * |default false
- * |option [Disabled] false
- * |option [Enabled] true
  * |preview valid
  *
  * |factory /blocks/binary_file_source(dtype,optimizeForStandardFile)
@@ -164,6 +162,7 @@ public:
     {
         Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
+        if(_path.empty()) throw Pothos::FileException("BinaryFileSource", "empty file path");
         _fd = open(_path.c_str(), O_RDONLY | O_BINARY);
         if (_fd < 0) throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
     }
@@ -207,7 +206,7 @@ public:
         auto r = ::read(_fd, outBuffer, (unsigned int)(outBuffer.length));
 
         if (r >= 0) output->produce(r / outBuffer.dtype.size());
-        else        throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
+        else        throw Pothos::Util::ErrnoException<Pothos::IOException>();
     }
 
 private:
@@ -224,7 +223,8 @@ public:
 
     BinaryFileMMapSource(const Pothos::DType& dtype):
         BinaryFileSourceBase(dtype),
-        _rewind(false)
+        _rewind(false),
+        _mmapBufferManager(nullptr)
     {
     }
 
@@ -234,13 +234,16 @@ public:
     {
         _rewind = rewind;
 
+        const auto isInited = bool(_mmapBufferManager);
+        size_t offset = 0;
+
         // Since the file is remaining the same, preserve our position.
-        const auto offset = _mmapBufferManager->offset();
+        if(isInited) offset = _mmapBufferManager->offset();
 
         this->deactivate();
         this->activate();
 
-        _mmapBufferManager->setOffset(offset);
+        if(isInited) _mmapBufferManager->setOffset(offset);
     }
 
     Pothos::BufferManager::Sptr getOutputBufferManager(
@@ -257,6 +260,7 @@ public:
     {
         Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
+        if(_path.empty()) throw Pothos::FileException("BinaryFileSource", "empty file path");
         MemoryMappedBufferManagerArgs args =
         {
             _path,
@@ -301,7 +305,8 @@ static Pothos::Block* makeBinaryFileSource(
     const Pothos::DType& dtype,
     bool optimizeForStandardFile)
 {
-    return optimizeForStandardFile ? BinaryFileMMapSource::make(dtype) : BinaryFileSource::make(dtype);
+    return optimizeForStandardFile ? BinaryFileMMapSource::make(dtype)
+                                   : BinaryFileSource::make(dtype);
 }
 
 static Pothos::BlockRegistry registerBinaryFileSource(
