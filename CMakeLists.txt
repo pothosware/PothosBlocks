@@ -30,6 +30,8 @@ endif (NOT JSON_HPP_INCLUDE_DIR)
 ########################################################################
 # Build subdirectories
 ########################################################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(file)
 add_subdirectory(event)
 add_subdirectory(network)

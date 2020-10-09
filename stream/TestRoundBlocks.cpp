@@ -1,37 +1,14 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "common/Testing.hpp"
+
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
 #include <cstring>
 #include <iostream>
 #include <vector>
-
-template <typename T>
-static Pothos::BufferChunk stdVectorToBufferChunk(const std::vector<T>& vec)
-{
-    Pothos::BufferChunk bufferChunk(Pothos::DType(typeid(T)), vec.size());
-    std::memcpy(
-        reinterpret_cast<void*>(bufferChunk.address),
-        vec.data(),
-        bufferChunk.length);
-
-    return bufferChunk;
-}
-
-template <typename T>
-static void compareBufferChunks(
-    const Pothos::BufferChunk& expectedBufferChunk,
-    const Pothos::BufferChunk& actualBufferChunk)
-{
-    POTHOS_TEST_EQUAL(expectedBufferChunk.dtype, actualBufferChunk.dtype);
-    POTHOS_TEST_EQUAL(expectedBufferChunk.elements(), actualBufferChunk.elements());
-    POTHOS_TEST_EQUALA(
-        expectedBufferChunk.as<const T*>(),
-        actualBufferChunk.as<const T*>(),
-        expectedBufferChunk.elements());
-}
 
 template <typename T>
 static void getTestValues(
@@ -57,10 +34,10 @@ static void getTestValues(
         -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0
     };
 
-    *pInputs = stdVectorToBufferChunk(inputs);
-    *pExpectedCeilOutputs = stdVectorToBufferChunk(expectedCeilOutputs);
-    *pExpectedFloorOutputs = stdVectorToBufferChunk(expectedFloorOutputs);
-    *pExpectedTruncOutputs = stdVectorToBufferChunk(expectedTruncOutputs);
+    *pInputs = BlocksTests::stdVectorToBufferChunk(inputs);
+    *pExpectedCeilOutputs = BlocksTests::stdVectorToBufferChunk(expectedCeilOutputs);
+    *pExpectedFloorOutputs = BlocksTests::stdVectorToBufferChunk(expectedFloorOutputs);
+    *pExpectedTruncOutputs = BlocksTests::stdVectorToBufferChunk(expectedTruncOutputs);
 }
 
 template <typename T>
@@ -106,13 +83,13 @@ static void testRoundBlocks()
         POTHOS_TEST_TRUE(topology.waitInactive(0.01));
     }
 
-    compareBufferChunks<T>(
+    BlocksTests::testBufferChunksEqual<T>(
         expectedCeilOutputs,
         ceilCollectorSink.call("getBuffer"));
-    compareBufferChunks<T>(
+    BlocksTests::testBufferChunksEqual<T>(
         expectedFloorOutputs,
         floorCollectorSink.call("getBuffer"));
-    compareBufferChunks<T>(
+    BlocksTests::testBufferChunksEqual<T>(
         expectedTruncOutputs,
         truncCollectorSink.call("getBuffer"));
 }

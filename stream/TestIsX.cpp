@@ -1,38 +1,14 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "common/Testing.hpp"
+
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
-#include <cstring>
 #include <iostream>
 #include <limits>
 #include <vector>
-
-template <typename T>
-static Pothos::BufferChunk stdVectorToBufferChunk(const std::vector<T>& inputs)
-{
-    Pothos::BufferChunk ret(Pothos::DType(typeid(T)), inputs.size());
-    std::memcpy(
-        reinterpret_cast<void*>(ret.address),
-        inputs.data(),
-        ret.length);
-
-    return ret;
-}
-
-template <typename T>
-static void compareBufferChunks(
-    const Pothos::BufferChunk& expected,
-    const Pothos::BufferChunk& actual)
-{
-    POTHOS_TEST_TRUE(expected.dtype == actual.dtype);
-    POTHOS_TEST_EQUAL(expected.elements(), actual.elements());
-    POTHOS_TEST_EQUALA(
-        expected.as<const T*>(),
-        actual.as<const T*>(),
-        expected.elements());
-}
 
 template <typename T>
 static void getTestParameters(
@@ -58,12 +34,12 @@ static void getTestParameters(
     const std::vector<std::int8_t> isNormalOutputs = {0,1,0,1,0,0};
     const std::vector<std::int8_t> isNegativeOutputs = {1,1,0,0,0,0};
 
-    (*pInputs) = stdVectorToBufferChunk(inputs);
-    (*pIsFiniteOutputs) = stdVectorToBufferChunk(isFiniteOutputs);
-    (*pIsInfOutputs) = stdVectorToBufferChunk(isInfOutputs);
-    (*pIsNaNOutputs) = stdVectorToBufferChunk(isNaNOutputs);
-    (*pIsNormalOutputs) = stdVectorToBufferChunk(isNormalOutputs);
-    (*pIsNegativeOutputs) = stdVectorToBufferChunk(isNegativeOutputs);
+    (*pInputs) = BlocksTests::stdVectorToBufferChunk(inputs);
+    (*pIsFiniteOutputs) = BlocksTests::stdVectorToBufferChunk(isFiniteOutputs);
+    (*pIsInfOutputs) = BlocksTests::stdVectorToBufferChunk(isInfOutputs);
+    (*pIsNaNOutputs) = BlocksTests::stdVectorToBufferChunk(isNaNOutputs);
+    (*pIsNormalOutputs) = BlocksTests::stdVectorToBufferChunk(isNormalOutputs);
+    (*pIsNegativeOutputs) = BlocksTests::stdVectorToBufferChunk(isNegativeOutputs);
 }
 
 template <typename T>
@@ -95,7 +71,7 @@ static void testBlock(
         POTHOS_TEST_TRUE(topology.waitInactive());
     }
 
-    compareBufferChunks<std::int8_t>(
+    BlocksTests::testBufferChunksEqual<std::int8_t>(
         expectedOutputs,
         collectorSink.call("getBuffer"));
 }

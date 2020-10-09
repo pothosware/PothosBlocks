@@ -1,56 +1,35 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "common/Testing.hpp"
+
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
-#include <algorithm>
 #include <complex>
-#include <cstring>
 #include <iostream>
-#include <limits>
 #include <type_traits>
 #include <vector>
 
 template <typename T>
-static Pothos::BufferChunk stdVectorToBufferChunk(const std::vector<T>& inputs)
-{
-    Pothos::BufferChunk ret(Pothos::DType(typeid(T)), inputs.size());
-    std::memcpy(
-        reinterpret_cast<void*>(ret.address),
-        inputs.data(),
-        ret.length);
-
-    return ret;
-}
-
-template <typename T>
-static typename std::enable_if<!std::is_floating_point<T>::value, void>::type compareBufferChunks(
+static inline typename std::enable_if<!std::is_floating_point<T>::value, void>::type compareBufferChunks(
     const Pothos::BufferChunk& expected,
     const Pothos::BufferChunk& actual)
 {
-    POTHOS_TEST_TRUE(expected.dtype == actual.dtype);
-    POTHOS_TEST_EQUAL(expected.elements(), actual.elements());
-    POTHOS_TEST_EQUALA(
-        expected.as<const T*>(),
-        actual.as<const T*>(),
-        expected.elements());
+    BlocksTests::testBufferChunksEqual<T>(
+        expected,
+        actual);
 }
 
 template <typename T>
-static typename std::enable_if<std::is_floating_point<T>::value, void>::type compareBufferChunks(
+static inline typename std::enable_if<std::is_floating_point<T>::value, void>::type compareBufferChunks(
     const Pothos::BufferChunk& expected,
     const Pothos::BufferChunk& actual)
 {
-    POTHOS_TEST_TRUE(expected.dtype == actual.dtype);
-    POTHOS_TEST_EQUAL(expected.elements(), actual.elements());
-    for(size_t elem = 0; elem < expected.elements(); ++elem)
-    {
-        POTHOS_TEST_CLOSE(
-            expected.as<const T*>()[elem],
-            actual.as<const T*>()[elem],
-            1e-6);
-    }
+    BlocksTests::testBufferChunksClose<T>(
+        expected,
+        actual,
+        T(1e-6));
 }
 
 template <typename T>
@@ -100,7 +79,7 @@ static void testRepeat()
     auto feederSource = Pothos::BlockRegistry::make(
                             "/blocks/feeder_source",
                             dtype);
-    feederSource.call("feedBuffer", stdVectorToBufferChunk(inputs));
+    feederSource.call("feedBuffer", BlocksTests::stdVectorToBufferChunk(inputs));
 
     auto repeat = Pothos::BlockRegistry::make(
                       "/blocks/repeat",
@@ -127,7 +106,7 @@ static void testRepeat()
     }
 
     compareBufferChunks<T>(
-        stdVectorToBufferChunk(expectedOutputs),
+        BlocksTests::stdVectorToBufferChunk(expectedOutputs),
         collectorSink.call("getBuffer"));
 }
 

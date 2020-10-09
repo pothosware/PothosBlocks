@@ -1,29 +1,18 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "common/Testing.hpp"
+
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
 #include <algorithm>
-#include <cstring>
+#include <cmath>
 #include <iostream>
 #include <limits>
-#include <type_traits>
 #include <vector>
 
 static constexpr size_t numInputs = 3;
-
-template <typename T>
-static Pothos::BufferChunk stdVectorToBufferChunk(const std::vector<T>& inputs)
-{
-    Pothos::BufferChunk ret(Pothos::DType(typeid(T)), inputs.size());
-    std::memcpy(
-        reinterpret_cast<void*>(ret.address),
-        inputs.data(),
-        ret.length);
-
-    return ret;
-}
 
 template <typename T>
 static void getTestParams(
@@ -52,24 +41,11 @@ static void getTestParams(
         std::back_inserter(*pTestInputsOut),
         [](const std::vector<T>& inputVec)
         {
-            return stdVectorToBufferChunk(inputVec);
+            return BlocksTests::stdVectorToBufferChunk(inputVec);
         });
 
-    *pExpectedMinOutputsOut = stdVectorToBufferChunk(minOutputVec);
-    *pExpectedMaxOutputsOut = stdVectorToBufferChunk(maxOutputVec);
-}
-
-template <typename T>
-static void compareBufferChunks(
-    const Pothos::BufferChunk& expected,
-    const Pothos::BufferChunk& actual)
-{
-    POTHOS_TEST_TRUE(expected.dtype == actual.dtype);
-    POTHOS_TEST_EQUAL(expected.elements(), actual.elements());
-    POTHOS_TEST_EQUALA(
-        expected.as<const T*>(),
-        actual.as<const T*>(),
-        expected.elements());
+    *pExpectedMinOutputsOut = BlocksTests::stdVectorToBufferChunk(minOutputVec);
+    *pExpectedMaxOutputsOut = BlocksTests::stdVectorToBufferChunk(maxOutputVec);
 }
 
 template <typename T>
@@ -115,11 +91,11 @@ static void testMinMax()
     }
 
     std::cout << " * Checking min..." << std::endl;
-    compareBufferChunks<T>(
+    BlocksTests::testBufferChunksEqual<T>(
         expectedMinOutputs,
         minCollectorSink.call("getBuffer"));
     std::cout << " * Checking max..." << std::endl;
-    compareBufferChunks<T>(
+    BlocksTests::testBufferChunksEqual<T>(
         expectedMaxOutputs,
         maxCollectorSink.call("getBuffer"));
 }

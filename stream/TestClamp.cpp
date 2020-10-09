@@ -1,55 +1,35 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "common/Testing.hpp"
+
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
-#include <algorithm>
-#include <cstring>
 #include <iostream>
 #include <limits>
 #include <type_traits>
 #include <vector>
 
 template <typename T>
-static Pothos::BufferChunk stdVectorToBufferChunk(const std::vector<T>& inputs)
-{
-    Pothos::BufferChunk ret(Pothos::DType(typeid(T)), inputs.size());
-    std::memcpy(
-        reinterpret_cast<void*>(ret.address),
-        inputs.data(),
-        ret.length);
-
-    return ret;
-}
-
-template <typename T>
-static typename std::enable_if<!std::is_floating_point<T>::value, void>::type compareBufferChunks(
+static inline typename std::enable_if<!std::is_floating_point<T>::value, void>::type compareBufferChunks(
     const Pothos::BufferChunk& expected,
     const Pothos::BufferChunk& actual)
 {
-    POTHOS_TEST_TRUE(expected.dtype == actual.dtype);
-    POTHOS_TEST_EQUAL(expected.elements(), actual.elements());
-    POTHOS_TEST_EQUALA(
-        expected.as<const T*>(),
-        actual.as<const T*>(),
-        expected.elements());
+    BlocksTests::testBufferChunksEqual<T>(
+        expected,
+        actual);
 }
 
 template <typename T>
-static typename std::enable_if<std::is_floating_point<T>::value, void>::type compareBufferChunks(
+static inline typename std::enable_if<std::is_floating_point<T>::value, void>::type compareBufferChunks(
     const Pothos::BufferChunk& expected,
     const Pothos::BufferChunk& actual)
 {
-    POTHOS_TEST_TRUE(expected.dtype == actual.dtype);
-    POTHOS_TEST_EQUAL(expected.elements(), actual.elements());
-    for(size_t elem = 0; elem < expected.elements(); ++elem)
-    {
-        POTHOS_TEST_CLOSE(
-            expected.as<const T*>()[elem],
-            actual.as<const T*>()[elem],
-            1e-6);
-    }
+    BlocksTests::testBufferChunksClose<T>(
+        expected,
+        actual,
+        T(1e-6));
 }
 
 template <typename T>
@@ -72,7 +52,7 @@ static void testClamp(
                             dtype);
     feederSource.call(
         "feedBuffer",
-        stdVectorToBufferChunk(inputs));
+        BlocksTests::stdVectorToBufferChunk(inputs));
 
     auto clamp = Pothos::BlockRegistry::make("/blocks/clamp", dtype);
     clamp.call("setMinAndMax", min, max);
@@ -103,7 +83,7 @@ static void testClamp(
     }
 
     compareBufferChunks<T>(
-        stdVectorToBufferChunk(expectedOutputs),
+        BlocksTests::stdVectorToBufferChunk(expectedOutputs),
         collectorSink.call("getBuffer"));
 }
 

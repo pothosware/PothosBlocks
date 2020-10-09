@@ -1,45 +1,17 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "common/Testing.hpp"
+
 #include <Pothos/Framework.hpp>
 #include <Pothos/Testing.hpp>
 
 #include <algorithm>
-#include <cstring>
 #include <iostream>
 #include <vector>
 
-#ifndef POTHOS_TEST_CLOSEA  
-
-#define POTHOS_TEST_CLOSEA(lhs, rhs, tol, size) \
-    { \
-        for (size_t i = 0; i < (size); i++) \
-        { \
-            __POTHOS_TEST_ASSERT( \
-                "index " + Pothos::TestingBase::current().toString(i) + \
-                " asserts " + Pothos::TestingBase::current().toString((lhs)[i]) + \
-                " == " + Pothos::TestingBase::current().toString((rhs)[i]), (std::abs((lhs)[i] - (rhs)[i]) <= (tol))); \
-        } \
-    }
-
-#endif
-
 template <typename T>
 static constexpr T epsilon(){return T(1e-6);}
-
-template <typename T>
-static Pothos::BufferChunk stdVectorToBufferChunk(const std::vector<T>& input)
-{
-    static const Pothos::DType dtype(typeid(T));
-
-    Pothos::BufferChunk ret(dtype, input.size());
-    std::memcpy(
-        reinterpret_cast<void*>(ret.address),
-        input.data(),
-        ret.length);
-
-    return ret;
-}
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_interleaver)
 {
@@ -66,13 +38,13 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_interleaver)
     POTHOS_TEST_EQUAL(chunkSize, interleaver.call<size_t>("chunkSize"));
 
     auto feederSource0 = Pothos::BlockRegistry::make("/blocks/feeder_source", "int8");
-    feederSource0.call("feedBuffer", stdVectorToBufferChunk(input0));
+    feederSource0.call("feedBuffer", BlocksTests::stdVectorToBufferChunk(input0));
     
     auto feederSource1 = Pothos::BlockRegistry::make("/blocks/feeder_source", "uint32");
-    feederSource1.call("feedBuffer", stdVectorToBufferChunk(input1));
+    feederSource1.call("feedBuffer", BlocksTests::stdVectorToBufferChunk(input1));
     
     auto feederSource2 = Pothos::BlockRegistry::make("/blocks/feeder_source", "float32");
-    feederSource2.call("feedBuffer", stdVectorToBufferChunk(input2));
+    feederSource2.call("feedBuffer", BlocksTests::stdVectorToBufferChunk(input2));
 
     auto collectorSink = Pothos::BlockRegistry::make("/blocks/collector_sink", outputTypeName);
 
@@ -90,13 +62,10 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_interleaver)
     }
 
     auto outputBuff = collectorSink.call<Pothos::BufferChunk>("getBuffer");
-   
-    POTHOS_TEST_EQUAL(outputTypeName, outputBuff.dtype.name());
-    POTHOS_TEST_EQUAL(output.size(), outputBuff.elements());
-    POTHOS_TEST_CLOSEA(
-        output.data(),
-        outputBuff.as<const OutputType*>(),
-        output.size(),
+
+    BlocksTests::testBufferChunksClose<OutputType>(
+        BlocksTests::stdVectorToBufferChunk(output),
+        outputBuff,
         epsilon<OutputType>());
 }
 
@@ -128,7 +97,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_deinterleaver)
     POTHOS_TEST_EQUAL(chunkSize, deinterleaver.call<size_t>("chunkSize"));
 
     auto feederSource = Pothos::BlockRegistry::make("/blocks/feeder_source", "int16");
-    feederSource.call("feedBuffer", stdVectorToBufferChunk(input));
+    feederSource.call("feedBuffer", BlocksTests::stdVectorToBufferChunk(input));
 
     std::vector<Pothos::Proxy> collectorSinks;
     for(size_t i = 0; i < numOutputs; ++i)
@@ -163,15 +132,9 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_deinterleaver)
 
     for(size_t i = 0; i < numOutputs; ++i)
     {
-        const auto& expectedOutput = expectedOutputs[i];
-        const auto& outputBuffer = collectorSinkBuffers[i];
-        POTHOS_TEST_EQUAL(outputTypeName, outputBuffer.dtype.name());
-
-        POTHOS_TEST_EQUAL(expectedOutput.size(), outputBuffer.elements());
-        POTHOS_TEST_CLOSEA(
-            expectedOutput.data(),
-            outputBuffer.as<const OutputType*>(),
-            expectedOutput.size(),
+        BlocksTests::testBufferChunksClose<OutputType>(
+            BlocksTests::stdVectorToBufferChunk(expectedOutputs[i]),
+            collectorSinkBuffers[i],
             epsilon<OutputType>());
     }
 }
@@ -183,7 +146,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_deinterleaver_to_interleaver)
 
     const std::string intermediateTypeName = "int32";
 
-    const auto testValues = stdVectorToBufferChunk<TestType>(
+    const auto testValues = BlocksTests::stdVectorToBufferChunk<TestType>(
     {
         -80, -70, -60, -50, -40, -30, -20, -10,
           0,  10,  20,  30,  40,  50,  60,  70
@@ -216,14 +179,12 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_deinterleaver_to_interleaver)
         POTHOS_TEST_TRUE(topology.waitInactive(0.05));
     }
 
-    auto output = collectorSink.call<Pothos::BufferChunk>("getBuffer"); 
+    auto output = collectorSink.call<Pothos::BufferChunk>("getBuffer");
 
-    POTHOS_TEST_EQUAL(testTypeName, output.dtype.name());
-    POTHOS_TEST_EQUAL(testValues.elements(), output.elements());
-    POTHOS_TEST_EQUALA(
-        testValues.as<const TestType*>(),
-        output.as<const TestType*>(),
-        output.elements());
+    BlocksTests::testBufferChunksClose<TestType>(
+        testValues,
+        output,
+        epsilon<TestType>());
 }
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_interleaver_to_deinterleaver)
@@ -235,9 +196,9 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_interleaver_to_deinterleaver)
 
     const std::vector<Pothos::BufferChunk> testValues =
     {
-        stdVectorToBufferChunk<TestType>({-5.0,-4.0,-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0,4.0}),
-        stdVectorToBufferChunk<TestType>({10.0,9.0,8.0,7.0,6.0,5.0,6.0,7.0,8.0,9.0}),
-        stdVectorToBufferChunk<TestType>({-10.5,-10.4,-10.3,-10.2,-10.1,9.1,9.2,9.3,9.4,9.5})
+        BlocksTests::stdVectorToBufferChunk<TestType>({-5.0,-4.0,-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0,4.0}),
+        BlocksTests::stdVectorToBufferChunk<TestType>({10.0,9.0,8.0,7.0,6.0,5.0,6.0,7.0,8.0,9.0}),
+        BlocksTests::stdVectorToBufferChunk<TestType>({-10.5,-10.4,-10.3,-10.2,-10.1,9.1,9.2,9.3,9.4,9.5})
     };
     const auto nchans = testValues.size();
     constexpr size_t chunkSize = 2;
@@ -276,13 +237,9 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_interleaver_to_deinterleaver)
 
     for(size_t chan = 0; chan < nchans; ++chan)
     {
-        auto output = collectorSinks[chan].call<Pothos::BufferChunk>("getBuffer");
-        POTHOS_TEST_EQUAL(testTypeName, output.dtype.name());
-        POTHOS_TEST_EQUAL(testValues[chan].elements(), output.elements());
-        POTHOS_TEST_CLOSEA(
-            testValues[chan].as<const TestType*>(),
-            output.as<const TestType*>(),
-            output.elements(),
+        BlocksTests::testBufferChunksClose<TestType>(
+            testValues[chan],
+            collectorSinks[chan].call<Pothos::BufferChunk>("getBuffer"),
             epsilon<TestType>());
     }
 }
