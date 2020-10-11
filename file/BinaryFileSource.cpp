@@ -11,7 +11,6 @@
 #include <Poco/File.h>
 #include <Poco/Format.h>
 #include <Poco/Logger.h>
-#include <Poco/Mutex.h>
 #include <Poco/Platform.h>
 
 #include <memory>
@@ -99,9 +98,7 @@ static void logErrnoOnFailure(int code, const char* context)
 class BinaryFileSourceBase : public Pothos::Block
 {
 public:
-    BinaryFileSourceBase(const Pothos::DType& dtype):
-        _path(),
-        _fileResourceMutex()
+    BinaryFileSourceBase(const Pothos::DType& dtype)
     {
         this->setupOutput(0, dtype);
 
@@ -135,8 +132,6 @@ public:
 
 protected:
     std::string _path;
-
-    Poco::FastMutex _fileResourceMutex;
 };
 
 class BinaryFileSource : public BinaryFileSourceBase
@@ -160,8 +155,6 @@ public:
 
     void activate() override
     {
-        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
-
         if(_path.empty()) throw Pothos::FileException("BinaryFileSource", "empty file path");
         _fd = open(_path.c_str(), O_RDONLY | O_BINARY);
         if (_fd < 0) throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
@@ -169,8 +162,6 @@ public:
 
     void deactivate() override
     {
-        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
-
         if (_fd != -1)
         {
             logErrnoOnFailure(::close(_fd), "close");
@@ -182,8 +173,6 @@ public:
     {
         const auto elems = this->workInfo().minElements;
         if (0 == elems) return;
-
-        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
 #if defined(POCO_OS_FAMILY_UNIX)
         //setup timeval for timeout
@@ -258,8 +247,6 @@ public:
 
     void activate(void) override
     {
-        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
-
         if(_path.empty()) throw Pothos::FileException("BinaryFileSource", "empty file path");
         MemoryMappedBufferManagerArgs args =
         {
@@ -274,8 +261,6 @@ public:
 
     void deactivate(void) override
     {
-        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
-
         _mmapBufferManager.reset();
     }
 
@@ -283,8 +268,6 @@ public:
     {
         const auto elems = this->workInfo().minElements;
         if(0 == elems) return;
-
-        Poco::FastMutex::ScopedLock lock(_fileResourceMutex);
 
         // Since our buffer manager provides a buffer with the contents of the mmap'd
         // file, all we need to do is call produce().
