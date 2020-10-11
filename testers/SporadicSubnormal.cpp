@@ -11,13 +11,13 @@ template <typename T>
 using CheckFcn = bool(*)(T);
 
 template <typename T>
-bool isNan(const T &x)
+bool isNan(T x)
 {
     return std::isnan(x);
 }
 
 template <typename T>
-bool isInf(const T &x)
+bool isInf(T x)
 {
     return std::isinf(x);
 }
