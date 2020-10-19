@@ -41,6 +41,8 @@ POTHOS_MODULE_UTIL(
         Mute.cpp
         Round.cpp
         TestRoundBlocks.cpp
+        Replace.cpp
+        TestReplace.cpp
     DESTINATION blocks
     ENABLE_DOCS
 )

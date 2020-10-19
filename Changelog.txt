@@ -6,6 +6,7 @@ Release 0.5.3 (pending)
 New blocks:
 
 - Added rounding blocks
+- Added replace block
 
 Fixes:
 
