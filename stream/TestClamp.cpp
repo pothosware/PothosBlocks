@@ -95,51 +95,60 @@ static void testClamp()
 
     const T min = 30;
     const T max = 90;
+    const size_t numRepetitions = 100;
 
-    const std::vector<T> inputs =
-    {
-        std::numeric_limits<T>::min(),
-        0,
-        25,
-        50,
-        75,
-        100,
-        125,
-        std::numeric_limits<T>::max()
-    };
-    const std::vector<T> expectedOutputMinClamped =
-    {
-        min,
-        min,
-        min,
-        50,
-        75,
-        100,
-        125,
-        std::numeric_limits<T>::max()
-    };
-    const std::vector<T> expectedOutputMaxClamped =
-    {
-        std::numeric_limits<T>::min(),
-        0,
-        25,
-        50,
-        75,
-        max,
-        max,
-        max
-    };
-    const std::vector<T> expectedOutputBothClamped =
-    {
-        min,
-        min,
-        min,
-        50,
-        75,
-        max,
-        max,
-        max
-    };
+    const auto inputs = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            std::numeric_limits<T>::min(),
+            0,
+            25,
+            50,
+            75,
+            100,
+            125,
+            std::numeric_limits<T>::max()
+        },
+        numRepetitions);
+    const auto expectedOutputMinClamped = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            min,
+            min,
+            min,
+            50,
+            75,
+            100,
+            125,
+            std::numeric_limits<T>::max()
+        },
+        numRepetitions);
+    const auto expectedOutputMaxClamped = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            std::numeric_limits<T>::min(),
+            0,
+            25,
+            50,
+            75,
+            max,
+            max,
+            max
+        },
+        numRepetitions);
+    const auto expectedOutputBothClamped = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            min,
+            min,
+            min,
+            50,
+            75,
+            max,
+            max,
+            max
+        },
+        numRepetitions);
 
     testClamp(min, max, false, false, inputs, inputs);
     testClamp(min, max, true, false, inputs, expectedOutputMinClamped);

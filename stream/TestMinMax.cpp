@@ -13,6 +13,7 @@
 #include <vector>
 
 static constexpr size_t numInputs = 3;
+static constexpr size_t numRepetitions = 100;
 
 template <typename T>
 static void getTestParams(
@@ -20,9 +21,18 @@ static void getTestParams(
     Pothos::BufferChunk* pExpectedMinOutputsOut,
     Pothos::BufferChunk* pExpectedMaxOutputsOut)
 {
-    std::vector<std::vector<T>> inputVecs = {{std::numeric_limits<T>::min(), 0,10,20,30,40,50},
-                                             {std::numeric_limits<T>::max(), 55,45,35,25,15,5},
-                                             {2,45,35,25,27,30,45}};
+    std::vector<std::vector<T>> inputVecs =
+    {
+        BlocksTests::stretchStdVector<T>(
+            std::vector<T>{std::numeric_limits<T>::min(), 0,10,20,30,40,50},
+            numRepetitions),
+        BlocksTests::stretchStdVector<T>(
+            std::vector<T>{std::numeric_limits<T>::max(), 55,45,35,25,15,5},
+            numRepetitions),
+        BlocksTests::stretchStdVector<T>(
+            std::vector<T>{2,45,35,25,27,30,45},
+            numRepetitions)
+    };
 
     std::vector<T> minOutputVec(inputVecs[0].size());
     std::vector<T> maxOutputVec(inputVecs[0].size());
