@@ -1,0 +1,12 @@
+{
+    "namespace": "PothosBlocksSIMD",
+    "functions":
+    [
+        {
+            "name": "clamp",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "const T&", "const T&", "size_t"]
+        }
+    ]
+}
