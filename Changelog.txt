@@ -1,6 +1,6 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
-Release 0.5.3 (pending)
+Release 0.6.0 (pending)
 ==========================
 
 New blocks:
@@ -13,6 +13,10 @@ Fixes:
 - Fix isnan type resolution GCC 7.3.1
 - Fix Abort block for OSX - no quick_exit
 - Fix Test Repeat for OSX template deduction
+
+Compatiblity breaks:
+
+- /blocks/binary_file_source: new parameter to enable or disable optimized reading
 
 Release 0.5.2 (2020-07-19)
 ==========================
