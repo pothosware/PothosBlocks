@@ -12,8 +12,11 @@
 #include <limits>
 
 //
-// Utility functions
+// Templated implementations
 //
+
+template <typename T>
+using RoundFcn = void(*)(const T*, T*, size_t);
 
 #define ROUNDFUNC(name,func) \
     template <typename T> \
@@ -33,13 +36,11 @@ ROUNDFUNC(arrayTrunc, std::trunc)
 // Test class
 //
 
-template <typename T, void (*Operator)(const T*, T*, size_t)>
+template <typename T>
 class Round: public Pothos::Block
 {
 public:
-    using Class = Round<T, Operator>;
-
-    Round(size_t dimension)
+    Round(size_t dimension, RoundFcn<T> fcn): _fcn(fcn)
     {
         const Pothos::DType dtype(typeid(T), dimension);
 
@@ -61,11 +62,14 @@ public:
         const T* buffIn = input->buffer();
         T* buffOut = output->buffer();
 
-        Operator(buffIn, buffOut, elems*output->dtype().dimension());
+        _fcn(buffIn, buffOut, elems*output->dtype().dimension());
 
         input->consume(elems);
         output->produce(elems);
     }
+
+private:
+    RoundFcn<T> _fcn;
 };
 
 //
@@ -77,7 +81,7 @@ static Pothos::Block* makeCeil(const Pothos::DType& dtype)
     #define ifTypeDeclareCeil(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
         { \
-            return new Round<T, arrayCeil<T>>(dtype.dimension()); \
+            return new Round<T>(dtype.dimension(), &arrayCeil<T>); \
         }
     ifTypeDeclareCeil(float)
     ifTypeDeclareCeil(double)
@@ -92,7 +96,7 @@ static Pothos::Block* makeFloor(const Pothos::DType& dtype)
     #define ifTypeDeclareFloor(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
         { \
-            return new Round<T, arrayFloor<T>>(dtype.dimension()); \
+            return new Round<T>(dtype.dimension(), &arrayFloor<T>); \
         }
     ifTypeDeclareFloor(float)
     ifTypeDeclareFloor(double)
@@ -107,7 +111,7 @@ static Pothos::Block* makeTrunc(const Pothos::DType& dtype)
     #define ifTypeDeclareTrunc(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
         { \
-            return new Round<T, arrayTrunc<T>>(dtype.dimension()); \
+            return new Round<T>(dtype.dimension(), &arrayTrunc<T>); \
         }
     ifTypeDeclareTrunc(float)
     ifTypeDeclareTrunc(double)
