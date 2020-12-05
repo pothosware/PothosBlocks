@@ -77,7 +77,7 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_constant_source)
     testConstantSource<std::uint16_t>(12345);
     testConstantSource<std::uint32_t>(12345678);
     testConstantSource<std::uint64_t>(123456789012);
-    testConstantSource<float>(0.123456789);
+    testConstantSource<float>(0.123456789f);
     testConstantSource<double>(0.987654321);
 
     testConstantSource<std::complex<std::int8_t>>({-123,45});
@@ -88,6 +88,6 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_constant_source)
     testConstantSource<std::complex<std::int16_t>>({12345,6789});
     testConstantSource<std::complex<std::int32_t>>({12345678,90123456});
     testConstantSource<std::complex<std::int64_t>>({123456789012,4567890234});
-    testConstantSource<std::complex<float>>({0.123456789,0.987654321});
+    testConstantSource<std::complex<float>>({0.123456789f,0.987654321f});
     testConstantSource<std::complex<double>>({0.987654321,0.123456789});
 }
