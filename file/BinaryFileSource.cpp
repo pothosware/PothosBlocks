@@ -219,7 +219,7 @@ public:
 
     virtual ~BinaryFileMMapSource() = default;
 
-    void setAutoRewind(const bool rewind)
+    void setAutoRewind(const bool rewind) override
     {
         _rewind = rewind;
 
