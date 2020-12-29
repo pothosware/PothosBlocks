@@ -10,39 +10,62 @@ endif()
 ########################################################################
 # Stream blocks module
 ########################################################################
-include_directories(${JSON_HPP_INCLUDE_DIR})
+set(sources
+    Converter.cpp
+    TestConverter.cpp
+    Copier.cpp
+    Delay.cpp
+    TestDelay.cpp
+    DynamicRouter.cpp
+    Pacer.cpp
+    Relabeler.cpp
+    LabelStripper.cpp
+    Gateway.cpp
+    TestGateway.cpp
+    Reinterpret.cpp
+    RateMonitor.cpp
+    MinMax.cpp
+    TestMinMax.cpp
+    Interleaver.cpp
+    TestInterleaver.cpp
+    Deinterleaver.cpp
+    Clamp.cpp
+    TestClamp.cpp
+    Repeat.cpp
+    TestRepeat.cpp
+    IsX.cpp
+    TestIsX.cpp
+    Mute.cpp
+    Round.cpp
+    TestRoundBlocks.cpp
+    Replace.cpp
+    TestReplace.cpp)
+set(libraries "")
+
+if(xsimd_FOUND)
+    set(SIMDInputs
+        SIMD/Clamp.cpp)
+
+    PothosGenerateSIMDSources(
+        SIMDSources
+        SIMD/StreamBlocks.json
+        ${SIMDInputs})
+
+    list(APPEND sources ${SIMDSources})
+    include_directories(${CMAKE_CURRENT_BINARY_DIR})
+    list(APPEND libraries xsimd)
+endif()
+
+include_directories(
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${JSON_HPP_INCLUDE_DIR})
 POTHOS_MODULE_UTIL(
     TARGET StreamBlocks
-    SOURCES
-        Converter.cpp
-        TestConverter.cpp
-        Copier.cpp
-        Delay.cpp
-        TestDelay.cpp
-        DynamicRouter.cpp
-        Pacer.cpp
-        Relabeler.cpp
-        LabelStripper.cpp
-        Gateway.cpp
-        TestGateway.cpp
-        Reinterpret.cpp
-        RateMonitor.cpp
-        MinMax.cpp
-        TestMinMax.cpp
-        Interleaver.cpp
-        TestInterleaver.cpp
-        Deinterleaver.cpp
-        Clamp.cpp
-        TestClamp.cpp
-        Repeat.cpp
-        TestRepeat.cpp
-        IsX.cpp
-        TestIsX.cpp
-        Mute.cpp
-        Round.cpp
-        TestRoundBlocks.cpp
-        Replace.cpp
-        TestReplace.cpp
+    SOURCES ${sources}
+    LIBRARIES ${libraries}
     DESTINATION blocks
     ENABLE_DOCS
 )
+if(xsimd_FOUND)
+    add_dependencies(StreamBlocks StreamBlocks_SIMDDispatcher)
+endif()

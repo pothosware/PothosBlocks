@@ -1,6 +1,11 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+// Generated at build-time
+#ifdef POTHOS_XSIMD
+#include "StreamBlocks_SIMD.hpp"
+#endif
+
 #include <Pothos/Callable.hpp>
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
@@ -10,6 +15,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <type_traits>
 
 //
 // Implementation getters to be called on class construction
@@ -18,8 +24,29 @@
 template <typename T>
 using ClampFcn = void(*)(const T*, T*, const T&, const T&, size_t);
 
+#ifdef POTHOS_XSIMD
+
+// Due to limitations in some instruction sets, the SIMD implementation of clamp is
+// broken due to using the min/max uint32_t limits, so use the default implementation.
 template <typename T>
-static inline ClampFcn<T> getClampFcn()
+using EnableForSIMDImpl = typename std::enable_if<!std::is_same<std::uint32_t, T>::value, ClampFcn<T>>::type;
+
+template <typename T>
+using EnableForDefaultImpl = typename std::enable_if<std::is_same<std::uint32_t, T>::value, ClampFcn<T>>::type;
+
+template <typename T>
+static inline EnableForSIMDImpl<T> getClampFcn()
+{
+    return PothosBlocksSIMD::clampDispatch<T>();
+}
+
+#else
+template <typename T>
+using EnableForDefaultImpl = ClampFcn<T>;
+#endif
+
+template <typename T>
+static inline EnableForDefaultImpl<T> getClampFcn()
 {
     return [](const T* in, T* out, const T& lo, const T& hi, size_t num)
     {
@@ -84,7 +111,6 @@ public:
 
     Clamp(size_t dimension):
         Pothos::Block(),
-        _fcn(getClampFcn<T>()),
         _min(0),
         _max(0),
         _clampMin(true),
@@ -201,7 +227,7 @@ public:
     }
 
 private:
-    ClampFcn<T> _fcn;
+    static ClampFcn<T> _fcn;
 
     T _min;
     T _max;
@@ -222,6 +248,9 @@ private:
         }
     }
 };
+
+template <typename T>
+ClampFcn<T> Clamp<T>::_fcn = getClampFcn<T>();
 
 static Pothos::Block* makeClamp(const Pothos::DType& dtype)
 {
