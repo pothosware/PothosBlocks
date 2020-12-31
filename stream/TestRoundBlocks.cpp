@@ -10,6 +10,8 @@
 #include <iostream>
 #include <vector>
 
+static constexpr size_t numRepetitions = 100;
+
 template <typename T>
 static void getTestValues(
     Pothos::BufferChunk* pInputs,
@@ -17,22 +19,30 @@ static void getTestValues(
     Pothos::BufferChunk* pExpectedFloorOutputs,
     Pothos::BufferChunk* pExpectedTruncOutputs)
 {
-    const auto inputs = std::vector<T>
-    {
-        -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 1.0
-    };
-    const auto expectedCeilOutputs = std::vector<T>
-    {
-        -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
-    };
-    const auto expectedFloorOutputs = std::vector<T>
-    {
-        -1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0
-    };
-    const auto expectedTruncOutputs = std::vector<T>
-    {
-        -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0
-    };
+    const auto inputs = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 1.0
+        },
+        numRepetitions);
+    const auto expectedCeilOutputs = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0
+        },
+        numRepetitions);
+    const auto expectedFloorOutputs = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            -1.0, -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0
+        },
+        numRepetitions);
+    const auto expectedTruncOutputs = BlocksTests::stretchStdVector<T>(
+        std::vector<T>
+        {
+            -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0
+        },
+        numRepetitions);
 
     *pInputs = BlocksTests::stdVectorToBufferChunk(inputs);
     *pExpectedCeilOutputs = BlocksTests::stdVectorToBufferChunk(expectedCeilOutputs);
@@ -83,12 +93,17 @@ static void testRoundBlocks()
         POTHOS_TEST_TRUE(topology.waitInactive(0.01));
     }
 
+    std::cout << "   * Testing /blocks/ceil..." << std::endl;
     BlocksTests::testBufferChunksEqual<T>(
         expectedCeilOutputs,
         ceilCollectorSink.call("getBuffer"));
+
+    std::cout << "   * Testing /blocks/floor..." << std::endl;
     BlocksTests::testBufferChunksEqual<T>(
         expectedFloorOutputs,
         floorCollectorSink.call("getBuffer"));
+
+    std::cout << "   * Testing /blocks/trunc..." << std::endl;
     BlocksTests::testBufferChunksEqual<T>(
         expectedTruncOutputs,
         truncCollectorSink.call("getBuffer"));

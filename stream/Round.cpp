@@ -1,6 +1,11 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+// Generated at build-time
+#ifdef POTHOS_XSIMD
+#include "StreamBlocks_SIMD.hpp"
+#endif
+
 #include <Pothos/Callable.hpp>
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
@@ -18,19 +23,35 @@
 template <typename T>
 using RoundFcn = void(*)(const T*, T*, size_t);
 
-#define ROUNDFUNC(name,func) \
+#ifdef POTHOS_XSIMD
+
+#define FUNCGETTER(name,func) \
     template <typename T> \
-    static void name(const T* in, T* out, size_t num) \
+    static RoundFcn<T> name() \
     { \
-        for(size_t elem = 0; elem < num; ++elem) \
-        { \
-            out[elem] = func(in[elem]); \
-        } \
+        return PothosBlocksSIMD:: func ## Dispatch<T>(); \
     }
 
-ROUNDFUNC(arrayCeil,  std::ceil)
-ROUNDFUNC(arrayFloor, std::floor)
-ROUNDFUNC(arrayTrunc, std::trunc)
+#else
+
+#define FUNCGETTER(name,func) \
+    template <typename T> \
+    static RoundFcn<T> name() \
+    { \
+        return [](const T* in, T* out, size_t num) \
+        { \
+            for(size_t elem = 0; elem < num; ++elem) \
+            { \
+                out[elem] = std::func(in[elem]); \
+            } \
+        }; \
+    }
+
+#endif
+
+FUNCGETTER(getCeilFcn,  ceil)
+FUNCGETTER(getFloorFcn, floor)
+FUNCGETTER(getTruncFcn, trunc)
 
 //
 // Test class
@@ -81,7 +102,7 @@ static Pothos::Block* makeCeil(const Pothos::DType& dtype)
     #define ifTypeDeclareCeil(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
         { \
-            return new Round<T>(dtype.dimension(), &arrayCeil<T>); \
+            return new Round<T>(dtype.dimension(), getCeilFcn<T>()); \
         }
     ifTypeDeclareCeil(float)
     ifTypeDeclareCeil(double)
@@ -96,7 +117,7 @@ static Pothos::Block* makeFloor(const Pothos::DType& dtype)
     #define ifTypeDeclareFloor(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
         { \
-            return new Round<T>(dtype.dimension(), &arrayFloor<T>); \
+            return new Round<T>(dtype.dimension(), getFloorFcn<T>()); \
         }
     ifTypeDeclareFloor(float)
     ifTypeDeclareFloor(double)
@@ -111,7 +132,7 @@ static Pothos::Block* makeTrunc(const Pothos::DType& dtype)
     #define ifTypeDeclareTrunc(T) \
         if(Pothos::DType::fromDType(dtype, 1) == Pothos::DType(typeid(T))) \
         { \
-            return new Round<T>(dtype.dimension(), &arrayTrunc<T>); \
+            return new Round<T>(dtype.dimension(), getTruncFcn<T>()); \
         }
     ifTypeDeclareTrunc(float)
     ifTypeDeclareTrunc(double)

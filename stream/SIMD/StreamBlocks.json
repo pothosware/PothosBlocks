@@ -13,6 +13,24 @@
             "returnType": "void",
             "paramTypes": ["T"],
             "params": ["const T**", "T*", "T*", "size_t", "size_t"]
+        },
+        {
+            "name": "ceil",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "size_t"]
+        },
+        {
+            "name": "floor",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "size_t"]
+        },
+        {
+            "name": "trunc",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "size_t"]
         }
     ]
 }
