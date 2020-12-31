@@ -1,12 +1,17 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#ifdef POTHOS_XSIMD
+#include "StreamBlocks_SIMD.hpp"
+#endif
+
 #include <Pothos/Callable.hpp>
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
 
 #include <algorithm>
 #include <limits>
+#include <type_traits>
 
 //
 // Implementation getters to be called on class construction
@@ -14,6 +19,16 @@
 
 template <typename T>
 using MinMaxFcn = void(*)(const T**, T*, T*, size_t, size_t);
+
+#ifdef POTHOS_XSIMD
+
+template <typename T>
+static inline MinMaxFcn<T> getMinMaxFcn()
+{
+    return PothosBlocksSIMD::minmaxDispatch<T>();
+}
+
+#else
 
 template <typename T>
 static inline MinMaxFcn<T> getMinMaxFcn()
@@ -35,6 +50,8 @@ static inline MinMaxFcn<T> getMinMaxFcn()
         }
     };
 }
+
+#endif
 
 /***********************************************************************
  * |PothosDoc MinMax
@@ -66,7 +83,6 @@ public:
 
     MinMax(size_t dimension, size_t numInputs):
         Pothos::Block(),
-        _fcn(getMinMaxFcn<T>()),
         _numInputs(numInputs)
     {
         const Pothos::DType dtype(typeid(T), dimension);
@@ -98,12 +114,12 @@ public:
         T* outputMaxBuf = outputMax->buffer();
 
         const auto N = elems * inputs[0]->dtype().dimension();
-
-        _fcn((const T**)workInfo.inputPointers.data(),
-             outputMinBuf,
-             outputMaxBuf,
-             _numInputs,
-             N);
+        _minMaxFcn(
+            (const T**)workInfo.inputPointers.data(),
+            outputMinBuf,
+            outputMaxBuf,
+            _numInputs,
+            N);
 
         for(auto* input: inputs) input->consume(elems);
         outputMin->produce(elems);
@@ -111,9 +127,13 @@ public:
     }
 
 private:
-    MinMaxFcn<T> _fcn;
+    static MinMaxFcn<T> _minMaxFcn;
+
     size_t _numInputs;
 };
+
+template <typename T>
+MinMaxFcn<T> MinMax<T>::_minMaxFcn = getMinMaxFcn<T>();
 
 static Pothos::Block* makeMinMax(const Pothos::DType& dtype, size_t numInputs)
 {

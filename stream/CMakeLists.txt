@@ -44,7 +44,8 @@ set(libraries "")
 
 if(xsimd_FOUND)
     set(SIMDInputs
-        SIMD/Clamp.cpp)
+        SIMD/Clamp.cpp
+        SIMD/MinMax.cpp)
 
     PothosGenerateSIMDSources(
         SIMDSources

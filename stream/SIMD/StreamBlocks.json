@@ -7,6 +7,12 @@
             "returnType": "void",
             "paramTypes": ["T"],
             "params": ["const T*", "T*", "const T&", "const T&", "size_t"]
+        },
+        {
+            "name": "minmax",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T**", "T*", "T*", "size_t", "size_t"]
         }
     ]
 }
