@@ -44,6 +44,14 @@ namespace BlocksTests
     }
 
     template <typename T>
+    static inline Pothos::BufferChunk stdVectorToStretchedBufferChunk(
+        const std::vector<T>& inputs,
+        size_t numRepetitions)
+    {
+        return stdVectorToBufferChunk<T>(stretchStdVector<T>(inputs, numRepetitions));
+    }
+
+    template <typename T>
     static void testBufferChunksEqual(
         const Pothos::BufferChunk& expected,
         const Pothos::BufferChunk& actual)

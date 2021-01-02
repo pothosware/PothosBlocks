@@ -45,6 +45,7 @@ set(libraries "")
 if(xsimd_FOUND)
     set(SIMDInputs
         SIMD/Clamp.cpp
+        SIMD/IsX.cpp
         SIMD/MinMax.cpp
         SIMD/Round.cpp)
 

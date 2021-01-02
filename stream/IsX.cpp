@@ -1,6 +1,10 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#ifdef POTHOS_XSIMD
+#include "StreamBlocks_SIMD.hpp"
+#endif
+
 #include <Pothos/Exception.hpp>
 #include <Pothos/Framework.hpp>
 
@@ -13,6 +17,40 @@
 
 template <typename T>
 using IsXFcn = void(*)(const T*, std::int8_t*, size_t);
+
+#ifdef POTHOS_XSIMD
+
+template <typename T>
+static inline IsXFcn<T> getIsFinite()
+{
+    return PothosBlocksSIMD::isfiniteDispatch<T>();
+}
+
+template <typename T>
+static inline IsXFcn<T> getIsInf()
+{
+    return PothosBlocksSIMD::isinfDispatch<T>();
+}
+
+template <typename T>
+static inline IsXFcn<T> getIsNaN()
+{
+    return PothosBlocksSIMD::isnanDispatch<T>();
+}
+
+template <typename T>
+static inline IsXFcn<T> getIsNormal()
+{
+    return PothosBlocksSIMD::isnormalDispatch<T>();
+}
+
+template <typename T>
+static inline IsXFcn<T> getIsNegative()
+{
+    return PothosBlocksSIMD::isnegativeDispatch<T>();
+}
+
+#else
 
 template <typename T>
 static inline IsXFcn<T> getIsFinite()
@@ -58,6 +96,8 @@ static inline IsXFcn<T> getIsNegative()
         for (size_t i = 0; i < num; ++i) out[i] = std::signbit(in[i]) ? 1 : 0;
     };
 }
+
+#endif
 
 //
 // Block implementation
@@ -205,5 +245,5 @@ registerBlock(isnormal, IsNormal)
  * |preview disable
  *
  * |factory /blocks/isnegative(dtype)
- **********************************************************************/
+ *********************************************************************/
 registerBlock(isnegative, IsNegative)

@@ -31,6 +31,36 @@
             "returnType": "void",
             "paramTypes": ["T"],
             "params": ["const T*", "T*", "size_t"]
+        },
+        {
+            "name": "isfinite",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isinf",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isnan",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isnormal",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isnegative",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
         }
     ]
 }
