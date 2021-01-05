@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include <vector>
+#include <iterator>
 
 /***********************************************************************
  * |PothosDoc Interleaver
