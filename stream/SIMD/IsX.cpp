@@ -1,9 +1,8 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "common/XSIMDTypes.hpp"
-
 #include <xsimd/xsimd.hpp>
+#include <Pothos/Util/XSIMDTraits.hpp>
 
 #include <cmath>
 #include <cstdint>
@@ -50,7 +49,7 @@ namespace detail
         } \
  \
         template <typename T> \
-        static EnableIfXSIMDSupports<T, void> fcnName(const T* in, std::int8_t* out, size_t len) \
+        static Pothos::Util::EnableIfXSIMDSupports<T, void> fcnName(const T* in, std::int8_t* out, size_t len) \
         { \
             static constexpr size_t simdSize = xsimd::simd_traits<T>::size; \
             const auto numSIMDFrames = len / simdSize; \
@@ -75,7 +74,7 @@ namespace detail
         } \
  \
         template <typename T> \
-        static EnableIfXSIMDDoesNotSupport<T, void> fcnName(const T* in, std::int8_t* out, size_t len) \
+        static Pothos::Util::EnableIfXSIMDDoesNotSupport<T, void> fcnName(const T* in, std::int8_t* out, size_t len) \
         { \
             fcnName ## Unoptimized(in, out, len); \
         }

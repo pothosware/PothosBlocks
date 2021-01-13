@@ -1,9 +1,8 @@
 // Copyright (c) 2020 Nicholas Corgan
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "common/XSIMDTypes.hpp"
-
 #include <xsimd/xsimd.hpp>
+#include <Pothos/Util/XSIMDTraits.hpp>
 
 #include <algorithm>
 #include <type_traits>
@@ -19,7 +18,7 @@ namespace detail
     // No uint32_t implementation due to SIMD limitation
     template <typename T>
     struct IsXSIMDClampSupported: public std::integral_constant<bool,
-        XSIMDTraits<T>::IsSupported &&
+        Pothos::Util::XSIMDTraits<T>::IsSupported &&
         !std::is_same<T, std::uint32_t>::value> {};
 
     template <typename T, typename Ret>
