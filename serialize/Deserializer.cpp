@@ -1,13 +1,92 @@
 // Copyright (c) 2014-2017 Josh Blum
+//               2020-2021 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
 #include "SerializeCommon.hpp"
 #include <Pothos/Framework.hpp>
 #include <Poco/ByteOrder.h>
 #include <Poco/Format.h>
+
 #include <sstream>
 #include <cstring>
 #include <cassert>
+#include <numeric>
+
+/*
+ * Utility code
+ */
+
+static inline size_t getTotalBufferSize(const std::vector<Pothos::BufferChunk>& buffers)
+{
+    return std::accumulate(
+               buffers.begin(),
+               buffers.end(),
+               size_t(0),
+               [](size_t num, const Pothos::BufferChunk& buffer)
+               {
+                   return (num + buffer.length);
+               });
+}
+
+static void clearBytesFromBuffers(
+    std::vector<Pothos::BufferChunk> &buffers,
+    const size_t numBytes)
+{
+    assert(!buffers.empty());
+
+    const auto totalBufferSize = getTotalBufferSize(buffers);
+    assert(numBytes <= totalBufferSize);
+
+    if(numBytes == 0) return;
+    else if(numBytes == totalBufferSize) buffers.clear();
+    else
+    {
+        auto bytesRemaining = numBytes;
+
+        while(bytesRemaining > 0)
+        {
+            assert(!buffers.empty());
+
+            auto bytesToRemove = std::min(bytesRemaining, buffers[0].length);
+            buffers[0].address += bytesToRemove;
+            buffers[0].length -= bytesToRemove;
+            bytesRemaining -= bytesToRemove;
+
+            if(0 == buffers[0].length) buffers.erase(buffers.begin());
+        }
+    }
+}
+
+static void getAppendedBuffers(
+    const std::vector<Pothos::BufferChunk> &inputBuffers,
+    Pothos::BufferChunk& outputBuffer,
+    size_t numBytes)
+{
+    assert(!inputBuffers.empty());
+
+    if(numBytes > inputBuffers[0].length)
+    {
+        outputBuffer = Pothos::BufferChunk(inputBuffers[0].dtype, 0);
+
+        auto bytesRemaining = numBytes;
+        for(const auto& inputBuffer: inputBuffers)
+        {
+            if(0 == bytesRemaining) break;
+            else if(0 == inputBuffer.length) continue;
+
+            auto buff = inputBuffer;
+            buff.length = std::min(buff.length, bytesRemaining);
+            outputBuffer.append(buff);
+
+            bytesRemaining -= buff.length;
+        }
+    }
+    else
+    {
+        outputBuffer = inputBuffers[0];
+        outputBuffer.length = numBytes;
+    }
+}
 
 /***********************************************************************
  * |PothosDoc Deserializer
@@ -48,7 +127,8 @@ public:
     void handlePacket(const Pothos::BufferChunk &);
 
 private:
-    Pothos::BufferChunk _accumulator;
+    std::vector<Pothos::BufferChunk> _buffers;
+
     unsigned long long _nextExpectedIndex;
 };
 
@@ -62,6 +142,7 @@ static bool inspectPacket(const Pothos::BufferChunk &packet, bool &isFragment, s
 {
     const uint32_t *vrlp_pkt = packet;
     const char *p = packet;
+
     if ((p[0] == 'm') and (p[1] == 'V') and (p[2] == 'R') and (p[3] == 'L'))
     {
         assert(Poco::ByteOrder::fromNetwork(vrlp_pkt[0]) == mVRL);
@@ -127,38 +208,35 @@ static void unpackBuffer(const Pothos::BufferChunk &packet, size_t &seq, size_t 
 void Deserializer::work(void)
 {
     auto inputPort = this->input(0);
-    auto buff = inputPort->buffer();
+    if(inputPort->elements() == 0) return;
+
+    auto buff = inputPort->takeBuffer();
     inputPort->consume(buff.length);
+    _buffers.emplace_back(std::move(buff));
 
-    //TODO use an iovec approach to avoid accumulating
-
-    _accumulator.append(buff);
-
-    //character by character recovery search for packet header
-    while (_accumulator.length >= MIN_PKT_BYTES)
+    while(getTotalBufferSize(_buffers) >= MIN_PKT_BYTES)
     {
-        bool isFragment = true; size_t pkt_bytes = 0;
-        if (inspectPacket(_accumulator, isFragment, pkt_bytes))
-        {
-            if (isFragment) return; //wait for more incoming buffers to accumulate
-            this->handlePacket(_accumulator); //handle the packet, its good probably
+        bool isFragment = true;
+        size_t pktBytes = 0;
 
-            //increment for the next iteration
-            assert(pkt_bytes <= _accumulator.length);
-            _accumulator.address += pkt_bytes;
-            _accumulator.length -= pkt_bytes;
-            assert(_accumulator.length <= _accumulator.getBuffer().getLength());
-        }
-        else
+        Pothos::BufferChunk packet;
+        getAppendedBuffers(_buffers, packet, MIN_PKT_BYTES);
+
+        // Get pktBytes.
+        inspectPacket(packet, isFragment, pktBytes);
+        if(pktBytes > MIN_PKT_BYTES) getAppendedBuffers(_buffers, packet, pktBytes);
+
+        if(inspectPacket(packet, isFragment, pktBytes))
         {
-            //the search continues
-            _accumulator.address++;
-            _accumulator.length--;
+            if(isFragment) return; // Wait for more incoming buffers
+
+            getAppendedBuffers(_buffers, packet, padUp32(pktBytes));
+            this->handlePacket(packet);
+
+            clearBytesFromBuffers(_buffers, pktBytes);
         }
+        else clearBytesFromBuffers(_buffers, 1); // The search continues
     }
-
-    //dont keep a reference if the buffer is empty
-    if (_accumulator.length == 0) _accumulator = Pothos::BufferChunk();
 }
 
 /*!
