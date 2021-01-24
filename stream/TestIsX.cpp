@@ -10,6 +10,8 @@
 #include <limits>
 #include <vector>
 
+static constexpr size_t numRepetitions = 100;
+
 template <typename T>
 static void getTestParameters(
     Pothos::BufferChunk* pInputs,
@@ -34,12 +36,12 @@ static void getTestParameters(
     const std::vector<std::int8_t> isNormalOutputs = {0,1,0,1,0,0};
     const std::vector<std::int8_t> isNegativeOutputs = {1,1,0,0,0,0};
 
-    (*pInputs) = BlocksTests::stdVectorToBufferChunk(inputs);
-    (*pIsFiniteOutputs) = BlocksTests::stdVectorToBufferChunk(isFiniteOutputs);
-    (*pIsInfOutputs) = BlocksTests::stdVectorToBufferChunk(isInfOutputs);
-    (*pIsNaNOutputs) = BlocksTests::stdVectorToBufferChunk(isNaNOutputs);
-    (*pIsNormalOutputs) = BlocksTests::stdVectorToBufferChunk(isNormalOutputs);
-    (*pIsNegativeOutputs) = BlocksTests::stdVectorToBufferChunk(isNegativeOutputs);
+    (*pInputs) = BlocksTests::stdVectorToStretchedBufferChunk(inputs, numRepetitions);
+    (*pIsFiniteOutputs) = BlocksTests::stdVectorToStretchedBufferChunk(isFiniteOutputs, numRepetitions);
+    (*pIsInfOutputs) = BlocksTests::stdVectorToStretchedBufferChunk(isInfOutputs, numRepetitions);
+    (*pIsNaNOutputs) = BlocksTests::stdVectorToStretchedBufferChunk(isNaNOutputs, numRepetitions);
+    (*pIsNormalOutputs) = BlocksTests::stdVectorToStretchedBufferChunk(isNormalOutputs, numRepetitions);
+    (*pIsNegativeOutputs) = BlocksTests::stdVectorToStretchedBufferChunk(isNegativeOutputs, numRepetitions);
 }
 
 template <typename T>

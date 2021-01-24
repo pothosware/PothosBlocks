@@ -7,6 +7,60 @@
             "returnType": "void",
             "paramTypes": ["T"],
             "params": ["const T*", "T*", "const T&", "const T&", "size_t"]
+        },
+        {
+            "name": "minmax",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T**", "T*", "T*", "size_t", "size_t"]
+        },
+        {
+            "name": "ceil",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "size_t"]
+        },
+        {
+            "name": "floor",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "size_t"]
+        },
+        {
+            "name": "trunc",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "T*", "size_t"]
+        },
+        {
+            "name": "isfinite",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isinf",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isnan",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isnormal",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
+        },
+        {
+            "name": "isnegative",
+            "returnType": "void",
+            "paramTypes": ["T"],
+            "params": ["const T*", "std::int8_t*", "size_t"]
         }
     ]
 }
