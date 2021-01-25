@@ -3,16 +3,25 @@ This this the changelog file for the Pothos Blocks toolkit.
 Release 0.6.0 (pending)
 ==========================
 
+- XSIMD implementation of various blocks
+- Memory mapped buffer for binary file source
+
 New blocks:
 
 - Added rounding blocks
 - Added replace block
+
+Release 0.5.3 (2021-01-24)
+==========================
 
 Fixes:
 
 - Fix isnan type resolution GCC 7.3.1
 - Fix Abort block for OSX - no quick_exit
 - Fix Test Repeat for OSX template deduction
+- Fix some blocks not taking DType dimension into account
+- SporadicSubnormal: fixed function pointer type
+- TestConstantSource: fixed narrowing warnings
 
 Compatiblity breaks:
 
