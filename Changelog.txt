@@ -1,6 +1,6 @@
 This this the changelog file for the Pothos Blocks toolkit.
 
-Release 0.5.3 (pending)
+Release 0.5.3 (2021-01-24)
 ==========================
 
 - Fix isnan type resolution GCC 7.3.1
