@@ -1,31 +1,53 @@
 // Copyright (c) 2014-2017 Josh Blum
+//                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "FileUtils.hpp"
+
 #include <Pothos/Framework.hpp>
+#include <Pothos/Util/ExceptionForErrorCode.hpp>
 
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef _MSC_VER
-#include <io.h>
-#else
-#include <unistd.h>
-#endif //_MSC_VER
-#include <stdio.h>
-#include <cerrno>
+class BinaryFileSinkBase: public Pothos::Block
+{
+public:
+    BinaryFileSinkBase():
+        _fd(-1),
+        _enabled(true)
+    {
+        this->setupInput(0);
+        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSinkBase, setEnabled));
+    }
 
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
+    void deactivate() override
+    {
+        close(_fd);
+        _fd = -1;
+    }
 
-#include <sys/stat.h> //O_CREAT mode defines
-#ifdef _MSC_VER
-#define MY_S_IREADWRITE _S_IREAD | _S_IWRITE
-#else
-#define MY_S_IREADWRITE S_IRUSR | S_IWUSR
-#endif
+    void setEnabled(const bool enabled)
+    {
+        _enabled = enabled;
+    }
 
-#include <Poco/Logger.h>
+    void work() override
+    {
+        auto in0 = this->input(0);
+        if (in0->elements() == 0) return;
+        if (!_enabled) in0->consume(in0->elements());
+        else
+        {
+            const void *ptr = in0->buffer();
+            auto r = write(_fd, ptr, in0->elements());
+
+            if (r >= 0) in0->consume(size_t(r));
+            else throw Pothos::Util::ErrnoException<Pothos::WriteFileException>();
+        }
+    }
+
+protected:
+    int _fd;
+    bool _enabled;
+};
 
 /***********************************************************************
  * |PothosDoc Binary File Sink
@@ -49,21 +71,17 @@
  * |setter setFilePath(path)
  * |setter setEnabled(enabled)
  **********************************************************************/
-class BinaryFileSink : public Pothos::Block
+class BinaryFilepathSink: public BinaryFileSinkBase
 {
 public:
     static Block *make(void)
     {
-        return new BinaryFileSink();
+        return new BinaryFilepathSink();
     }
 
-    BinaryFileSink(void):
-        _fd(-1),
-        _enabled(true)
+    BinaryFilepathSink(void): BinaryFileSinkBase()
     {
-        this->setupInput(0);
-        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSink, setFilePath));
-        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileSink, setEnabled));
+        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFilepathSink, setFilePath));
     }
 
     void setFilePath(const std::string &path)
@@ -77,49 +95,66 @@ public:
         }
     }
 
-    void setEnabled(const bool enabled)
-    {
-        _enabled = enabled;
-    }
-
-    void activate(void)
+    void activate(void) override
     {
         if (_path.empty()) throw Pothos::FileException("BinaryFileSink", "empty file path");
-        _fd = open(_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, MY_S_IREADWRITE);
-        if (_fd < 0)
-        {
-            poco_error_f4(Poco::Logger::get("BinaryFileSink"), "open(%s) returned %d -- %s(%d)", _path, _fd, std::string(strerror(errno)), errno);
-        }
-    }
+        _fd = openFileForWrite(_path.c_str());
 
-    void deactivate(void)
-    {
-        close(_fd);
-        _fd = -1;
-    }
-
-    void work(void)
-    {
-        auto in0 = this->input(0);
-        if (in0->elements() == 0) return;
-        if (!_enabled) in0->consume(in0->elements());
-        else
-        {
-            const void *ptr = in0->buffer();
-            auto r = write(_fd, ptr, in0->elements());
-            if (r >= 0) in0->consume(size_t(r));
-            else
-            {
-                poco_error_f3(Poco::Logger::get("BinaryFileSink"), "write() returned %d -- %s(%d)", int(r), std::string(strerror(errno)), errno);
-            }
-        }
+        if (_fd < 0) throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
     }
 
 private:
-    int _fd;
     std::string _path;
-    bool _enabled;
 };
 
-static Pothos::BlockRegistry registerBinaryFileSink(
-    "/blocks/binary_file_sink", &BinaryFileSink::make);
+/***********************************************************************
+ * |PothosDoc Binary File Descriptor Sink
+ *
+ * Read streaming data from port 0 and write the contents to a file.
+ *
+ * |category /Sinks
+ * |category /File IO
+ * |keywords sink binary file
+ *
+ * |param fd[File Descriptor] The file descriptor to use. This file
+ * descriptor will be closed when the block deactivates.
+ * |widget SpinBox(minimum=0)
+ * |default 1
+ * |preview enable
+ *
+ * |param enabled[File Write] Saving will not occur if disabled.
+ * |option [Enabled] true
+ * |option [Disabled] false
+ * |default true
+ *
+ * |factory /blocks/binary_filedescriptor_sink()
+ * |setter setFileDescriptor(fd)
+ * |setter setEnabled(enabled)
+ **********************************************************************/
+class BinaryFileDescriptorSink: public BinaryFileSinkBase
+{
+public:
+    static Block *make(void)
+    {
+        return new BinaryFileDescriptorSink();
+    }
+
+    BinaryFileDescriptorSink(void): BinaryFileSinkBase()
+    {
+        this->registerCall(this, POTHOS_FCN_TUPLE(BinaryFileDescriptorSink, setFileDescriptor));
+    }
+
+    void setFileDescriptor(int fd)
+    {
+        bool wasActive = (_fd != -1);
+        if(wasActive) this->deactivate();
+
+        _fd = fd;
+    }
+};
+
+static Pothos::BlockRegistry registerBinaryFilepathSink(
+    "/blocks/binary_file_sink", &BinaryFilepathSink::make);
+
+static Pothos::BlockRegistry registerBinaryFileDescriptorSink(
+    "/blocks/binary_filedescriptor_sink", &BinaryFileDescriptorSink::make);

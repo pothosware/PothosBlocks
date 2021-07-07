@@ -2,9 +2,12 @@
 //                    2020 Nicholas Corgan
 // SPDX-License-Identifier: BSL-1.0
 
+#include "FileUtils.hpp"
+
 #include <Pothos/Testing.hpp>
 #include <Pothos/Framework.hpp>
 #include <Pothos/Proxy.hpp>
+#include <Pothos/Util/ExceptionForErrorCode.hpp>
 
 #include <json.hpp>
 
@@ -17,23 +20,12 @@
 
 using json = nlohmann::json;
 
-static void testBinaryFileBlocks(bool optimizeSourceForStandardFile)
+static void testBinaryFileBlocksCommon(
+    const Pothos::Proxy& fileSource,
+    const Pothos::Proxy& fileSink)
 {
     auto feeder = Pothos::BlockRegistry::make("/blocks/feeder_source", "int");
     auto collector = Pothos::BlockRegistry::make("/blocks/collector_sink", "int");
-
-    auto tempFile = Poco::TemporaryFile();
-    POTHOS_TEST_TRUE(tempFile.createFile());
-
-    auto fileSource = Pothos::BlockRegistry::make(
-                          "/blocks/binary_file_source",
-                          "int",
-                          optimizeSourceForStandardFile);
-    fileSource.call("setAutoRewind", false);
-    fileSource.call("setFilePath", tempFile.path());
-
-    auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
-    fileSink.call("setFilePath", tempFile.path());
 
     //create a test plan
     json testPlan;
@@ -63,6 +55,24 @@ static void testBinaryFileBlocks(bool optimizeSourceForStandardFile)
     collector.call("verifyTestPlan", expected);
 }
 
+static void testBinaryFileBlocks(bool optimizeSourceForStandardFile)
+{
+    auto tempFile = Poco::TemporaryFile();
+    POTHOS_TEST_TRUE(tempFile.createFile());
+
+    auto fileSource = Pothos::BlockRegistry::make(
+                          "/blocks/binary_file_source",
+                          "int",
+                          optimizeSourceForStandardFile);
+    fileSource.call("setAutoRewind", false);
+    fileSource.call("setFilePath", tempFile.path());
+
+    auto fileSink = Pothos::BlockRegistry::make("/blocks/binary_file_sink");
+    fileSink.call("setFilePath", tempFile.path());
+
+    testBinaryFileBlocksCommon(fileSource, fileSink);
+}
+
 POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
 {
     std::cout << "Testing with standard file optimization..." << std::endl;
@@ -70,6 +80,28 @@ POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_blocks)
 
     std::cout << "Testing without standard file optimization..." << std::endl;
     testBinaryFileBlocks(false);
+}
+
+POTHOS_TEST_BLOCK("/blocks/tests", test_binary_file_descriptor_blocks)
+{
+    auto tempFile = Poco::TemporaryFile();
+    POTHOS_TEST_TRUE(tempFile.createFile());
+
+    int readFD = openFileForRead(tempFile.path().c_str());
+    if(readFD < 0) throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
+
+    int writeFD = openFileForWrite(tempFile.path().c_str());
+    if(writeFD < 0) throw Pothos::Util::ErrnoException<Pothos::OpenFileException>();
+
+    auto fdSource = Pothos::BlockRegistry::make(
+                        "/blocks/binary_filedescriptor_source",
+                        "int");
+    fdSource.call("setFileDescriptor", readFD);
+
+    auto fdSink = Pothos::BlockRegistry::make("/blocks/binary_filedescriptor_sink");
+    fdSink.call("setFileDescriptor", writeFD);
+
+    testBinaryFileBlocksCommon(fdSource, fdSink);
 }
 
 POTHOS_TEST_BLOCK("/blocks/tests", test_circular_binary_file_source)
