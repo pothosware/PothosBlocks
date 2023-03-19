@@ -39,7 +39,9 @@ set(sources
     Round.cpp
     TestRoundBlocks.cpp
     Replace.cpp
-    TestReplace.cpp)
+    TestReplace.cpp
+    FirstN.cpp
+    TestFirstN.cpp)
 set(libraries "")
 
 if(xsimd_FOUND)
